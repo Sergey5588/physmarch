@@ -1,1 +1,0 @@
-/usr/bin/c++ -g CMakeFiles/ray_marching.dir/src/main.cpp.o CMakeFiles/ray_marching.dir/src/glad.c.o CMakeFiles/ray_marching.dir/src/VBO.cpp.o CMakeFiles/ray_marching.dir/src/VAO.cpp.o CMakeFiles/ray_marching.dir/src/EBO.cpp.o CMakeFiles/ray_marching.dir/src/shaderClass.cpp.o -o ray_marching  -lglfw /usr/lib64/libGLX.so /usr/lib64/libOpenGL.so
