@@ -1,4 +1,0 @@
-/home/sergey/HDD/cpp/Raymarching/build/CMakeFiles/ray_marching.dir
-/home/sergey/HDD/cpp/Raymarching/build/CMakeFiles/copy_resources.dir
-/home/sergey/HDD/cpp/Raymarching/build/CMakeFiles/edit_cache.dir
-/home/sergey/HDD/cpp/Raymarching/build/CMakeFiles/rebuild_cache.dir
