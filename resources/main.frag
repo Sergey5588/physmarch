@@ -34,7 +34,7 @@ vec3 normal(vec3 point) {
 void main() {
     vec3 up = vec3(0.0, 1.0, 0.0);
     vec3 right = cross(up, Orientation);
-    vec3 localUp = cross(right, Orientation);
+    vec3 localUp = cross(-right, Orientation);
     vec3 focalPoint = vec3(Resolution.x/2, Resolution.y/2, -400.0);
     vec3 ray = gl_FragCoord.xyz - focalPoint;
     

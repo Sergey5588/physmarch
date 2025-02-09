@@ -4,18 +4,14 @@ cmake_policy(SET CMP0072 NEW)
 find_package(OpenGL REQUIRED)
 include_directories(include)
 
-add_executable(ray_marching 
-    src/main.cpp 
-    include/glad.h
-    src/glad.c
-    include/VBO.h
-    src/VBO.cpp
-    include/VAO.h
-    src/VAO.cpp
-    include/EBO.h
-    src/EBO.cpp
-    include/shaderClass.h
-    src/shaderClass.cpp
+
+file(GLOB raySRC CONFIGURE_DEPENDS "include/*.h" "src/*.cpp" "src/*.c")
+
+
+
+add_executable(ray_marching
+    ${raySRC}
+    
 )
 target_link_libraries(ray_marching 
     glfw

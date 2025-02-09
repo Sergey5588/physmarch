@@ -104,7 +104,6 @@ int main()
 
 	// Create a GLFWwindow object of 800 by 800 pixels, naming it "YoutubeOpenGL"
 	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Ray_marching", NULL, NULL);
-	glfwSwapInterval(1);
 	// Error check if the window fails to create
 	if (window == NULL)
 	{
@@ -130,7 +129,7 @@ int main()
 	// Generates Vertex Array Object and binds it
 	VAO VAO1;
 	VAO1.Bind();
-
+	
 	// Generates Vertex Buffer Object and links it to vertices
 	VBO VBO1(vertices, sizeof(vertices));
 	// Generates Element Buffer Object and links it to indices
@@ -149,8 +148,9 @@ int main()
 	
 	// Main while loop
 
-	glfwSetInputMode(window,GLFW_CURSOR_HIDDEN, 1);
+	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 	glfwSetCursorPos(window, WIDTH/2, HEIGHT/2);
+	glfwSwapInterval(1);
 	while (!glfwWindowShouldClose(window))
 	{
 		// Spec
