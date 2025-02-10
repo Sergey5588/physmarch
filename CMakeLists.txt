@@ -5,7 +5,7 @@ find_package(OpenGL REQUIRED)
 include_directories(include)
 
 
-file(GLOB raySRC CONFIGURE_DEPENDS "include/*.h" "src/*.cpp" "src/*.c")
+file(GLOB raySRC CONFIGURE_DEPENDS "include/*.h" "src/*.cpp" "src/*.c" "imgui/*.cpp")
 
 
 
