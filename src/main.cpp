@@ -8,6 +8,14 @@
 #include<glm/gtx/transform.hpp>
 #include<glm/gtx/vector_angle.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+
+#include<imgui.h>
+#include<imgui_impl_glfw.h>
+#include<imgui_impl_opengl3.h>
+
+
+
 #include"shaderClass.h"
 #include"VAO.h"
 #include"VBO.h"
@@ -16,7 +24,7 @@
 #include<string>
 #define Up glm::vec3(0,-1,0)
 
-
+extern bool MOUSE_LOCK = true;
 
 // Vertices coordinates
 GLfloat vertices[] =
@@ -36,47 +44,62 @@ GLuint indices[] =
 };
 
 
-void HandleInput(GLFWwindow* window, glm::vec3& Orientation, glm::vec3& Position, int height, int width) {
-	
-	float speed = 10.0f;
-	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-	{
-		Position += Orientation * speed;
-	}
-	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-	{
-		Position -= Orientation * speed;
-	}
-	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-	{
-		Position -= glm::normalize(glm::cross(Orientation, Up)) * speed;
-	}
-	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-	{
-		Position += glm::normalize(glm::cross(Orientation, Up)) * speed;
-	}
-	if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-	{
-		Position -= Up * speed;
-	}
-	if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-	{
-		Position += Up * speed;
-	}
-		
-	
-	
-	double mouseX = 0;
-	double mouseY = 0;
-	double sensitivity = 100.0f;
-	glfwGetCursorPos(window, &mouseX, &mouseY);
-	
-	float rotX = (float)(mouseX - (width / 2)) / width * sensitivity;
-	float rotY = (float)(mouseY - (height / 2)) / height * sensitivity;
+void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+    if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
+    {
+        MOUSE_LOCK = !MOUSE_LOCK;
+    }
+}
 
-	Orientation = glm::rotate(Orientation, glm::radians(-rotY), glm::normalize(glm::cross(Orientation, -Up)));
-	Orientation = glm::rotate(Orientation, glm::radians(-rotX), Up);
-	glfwSetCursorPos(window, width/2, height/2);
+void HandleInput(GLFWwindow* window, glm::vec3& Orientation, glm::vec3& Position, int height, int width) {
+
+	float speed = 10.0f;
+	if (MOUSE_LOCK) {
+
+		
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		{
+			Position += Orientation * speed;
+		}
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		{
+			Position -= Orientation * speed;
+		}
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		{
+			Position -= glm::normalize(glm::cross(Orientation, Up)) * speed;
+		}
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		{
+			Position += glm::normalize(glm::cross(Orientation, Up)) * speed;
+		}
+		if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
+		{
+			Position -= Up * speed;
+		}
+		if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
+		{
+			Position += Up * speed;
+		}
+		
+			
+		
+		
+
+		double mouseX = 0;
+		double mouseY = 0;
+		double sensitivity = 100.0f;
+		glfwGetCursorPos(window, &mouseX, &mouseY);
+		
+		float rotX = (float)(mouseX - (width / 2)) / width * sensitivity;
+		float rotY = (float)(mouseY - (height / 2)) / height * sensitivity;
+
+		Orientation = glm::rotate(Orientation, glm::radians(-rotY), glm::normalize(glm::cross(Orientation, -Up)));
+		Orientation = glm::rotate(Orientation, glm::radians(-rotX), Up);
+		
+		glfwSetCursorPos(window, width/2, height/2);
+	}
 	//std::cout << std::to_string(Orientation.x) +" "+ std::to_string(Orientation.y) +" "+ std::to_string(Orientation.z) << std::endl;
 
 	
@@ -90,6 +113,7 @@ int main()
 {
 	int WIDTH = 800;
 	int HEIGHT = 800;
+	
 	glm::vec3 Orientation = glm::vec3(0,0,1);
 	glm::vec3 Position = glm::vec3(0,0,0);
 	// Initialize GLFW
@@ -144,6 +168,17 @@ int main()
 	shaderProgram.Activate();
 	glUniform2f(glGetUniformLocation(shaderProgram.ID, "Resolution"), 800.0f, 800.0f);
 
+	IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGuiIO& io = ImGui::GetIO();
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+    
+
+    // Setup Platform/Renderer backends
+    ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+    ImGui_ImplOpenGL3_Init();
+	
 	
 	
 	// Main while loop
@@ -151,8 +186,22 @@ int main()
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
 	glfwSetCursorPos(window, WIDTH/2, HEIGHT/2);
 	glfwSwapInterval(1);
+	glfwSetKeyCallback(window, key_callback);
 	while (!glfwWindowShouldClose(window))
-	{
+	{	
+		glfwPollEvents();
+		
+		ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplGlfw_NewFrame();
+        ImGui::NewFrame();
+
+		ImGui::SetNextWindowPos(ImVec2(0,0));
+		ImGui::ShowDemoWindow();
+		
+
+		
+		
+		
 		// Spec
 		// ify the color of the background
 		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
@@ -168,11 +217,19 @@ int main()
 		VAO1.Bind();
 		// Draw primitives, number of indices, datatype of indices, index of indices
 		glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
+
+		ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 		// Swap the back buffer with the front buffer
 		glfwSwapBuffers(window);
 		HandleInput(window, Orientation, Position, HEIGHT, WIDTH);
 		// Take care of all GLFW events
-		glfwPollEvents();
+
+		
+
+
+		
 		
 	}
 
@@ -183,9 +240,17 @@ int main()
 	VBO1.Delete();
 	EBO1.Delete();
 	shaderProgram.Delete();
+
+
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 	// Delete window before ending the program
 	glfwDestroyWindow(window);
 	// Terminate GLFW before ending the program
 	glfwTerminate();
+
+
+
 	return 0;
 }
