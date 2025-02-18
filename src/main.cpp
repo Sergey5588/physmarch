@@ -26,6 +26,9 @@
 
 extern bool MOUSE_LOCK = true;
 
+int WIDTH = 800;
+int HEIGHT = 800;
+
 // Vertices coordinates
 GLfloat vertices[] =
 {
@@ -107,12 +110,18 @@ void HandleInput(GLFWwindow* window, glm::vec3& Orientation, glm::vec3& Position
 
 }
 
-
+void framebuffer_size_callback(GLFWwindow* window, int width, int height)
+{
+        // make sure the viewport matches the new window dimensions; note that width and 
+        // height will be significantly larger than specified on retina displays.
+	glViewport(0, 0, width, height);
+	glUniform2f(glGetUniformLocation(shaderProgram.ID, "Resolution"), 800.0f, 800.0f);
+	WIDTH = width;
+	HEIGHT = height;
+}
 
 int main()
 {
-	int WIDTH = 800;
-	int HEIGHT = 800;
 	
 	glm::vec3 Orientation = glm::vec3(0,0,1);
 	glm::vec3 Position = glm::vec3(0,0,0);
@@ -137,7 +146,7 @@ int main()
 	}
 	// Introduce the window into the current context
 	glfwMakeContextCurrent(window);
-
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	//Load GLAD so it configures OpenGL
 	gladLoadGL();
 	// Specify the viewport of OpenGL in the Window
@@ -166,8 +175,7 @@ int main()
 	VBO1.Unbind();
 	EBO1.Unbind();
 	shaderProgram.Activate();
-	glUniform2f(glGetUniformLocation(shaderProgram.ID, "Resolution"), 800.0f, 800.0f);
-
+	
 	IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
@@ -209,7 +217,7 @@ int main()
 		glClear(GL_COLOR_BUFFER_BIT);
 		// Tell OpenGL which Shader Program we want to use
 		shaderProgram.Activate();
-
+		glUniform2f(glGetUniformLocation(shaderProgram.ID, "Resolution"), (float)WIDTH, (float)HEIGHT);
 		glUniform3f(glGetUniformLocation(shaderProgram.ID, "Orientation"), Orientation.x, Orientation.y, Orientation.z);
 		glUniform3f(glGetUniformLocation(shaderProgram.ID, "Cam_pos"), Position.x, Position.y, Position.z);
 
