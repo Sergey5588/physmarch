@@ -190,12 +190,14 @@ int main()
 	
 	// Main while loop
 
-	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_HIDDEN);
+	
 	glfwSetCursorPos(window, WIDTH/2, HEIGHT/2);
 	glfwSwapInterval(1);
 	glfwSetKeyCallback(window, key_callback);
 	while (!glfwWindowShouldClose(window))
 	{	
+		if(MOUSE_LOCK)
+			ImGui::SetMouseCursor(ImGuiMouseCursor_None);
 		glfwPollEvents();
 		
 		ImGui_ImplOpenGL3_NewFrame();
