@@ -11,11 +11,18 @@ float box(vec3 sizes, vec3 pos, vec3 ray) {
     
 
 }
+
+
+vec3 repeat(vec3 p, vec3 c) {
+    return mod(p + 0.5 * c, c) - 0.5 * c;
+}
+
 float sphere(float radius, vec3 pos, vec3 ray) {
     return length(pos-ray)-radius;
 }
 float testSDFComplitation(vec3 ray)
 {
+
     return max(-sphere(150, vec3(0,0,200), ray), box(vec3(100,100,100), vec3(0,0,300),ray));
 }
 vec3 normal(vec3 point) {
@@ -51,9 +58,12 @@ void main() {
     //         break;
     //     }
     // }
-    for (int i = 0; i< 1000; ++i) {
+    for (int i = 0; i< 5; ++i) {
+        ray = repeat(ray, vec3(1000.0, 1000.0, 1000.0));
         dist = testSDFComplitation(ray);
         ray += raydir * dist;
+
+        
     }
 
     //FragColor = vec4(gl_FragCoord.xy/Resolution.xy,1,1);
