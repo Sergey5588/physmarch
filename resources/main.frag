@@ -3,6 +3,7 @@
 uniform vec2 Resolution;
 uniform vec3 Orientation;
 uniform vec3 Cam_pos;
+uniform int Iterations = 100;
 out vec4 FragColor;
 float box(vec3 sizes, vec3 pos, vec3 ray) {
     
@@ -40,8 +41,8 @@ vec3 normal(vec3 point) {
 
 void main() {
     vec3 up = vec3(0.0, 1.0, 0.0);
-    vec3 right = cross(up, Orientation);
-    vec3 localUp = cross(-right, Orientation);
+    vec3 right = normalize(cross(up, Orientation));
+    vec3 localUp = normalize(cross(-right, Orientation));
     vec3 focalPoint = vec3(Resolution.x/2, Resolution.y/2, -400.0);
     vec3 ray = gl_FragCoord.xyz - focalPoint;
     
@@ -58,7 +59,7 @@ void main() {
     //         break;
     //     }
     // }
-    for (int i = 0; i< 5; ++i) {
+    for (int i = 0; i< Iterations; ++i) {
         ray = repeat(ray, vec3(1000.0, 1000.0, 1000.0));
         dist = testSDFComplitation(ray);
         ray += raydir * dist;

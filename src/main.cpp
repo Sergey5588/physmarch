@@ -30,6 +30,7 @@ bool MOUSE_LOCK = true;
 int WIDTH = 800;
 int HEIGHT = 800;
 
+int ITERATIONS = 100;
 // Vertices coordinates
 GLfloat vertices[] =
 {
@@ -113,8 +114,8 @@ void HandleInput(GLFWwindow* window, glm::vec3& Orientation, glm::vec3& Position
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
-        // make sure the viewport matches the new window dimensions; note that width and 
-        // height will be significantly larger than specified on retina displays.
+    // make sure the viewport matches the new window dimensions; note that width and 
+    // height will be significantly larger than specified on retina displays.
 	glViewport(0, 0, width, height);
 	WIDTH = width;
 	HEIGHT = height;
@@ -207,7 +208,11 @@ int main()
 
 		ImGui::SetNextWindowPos(ImVec2(0,0));
 		ImGui::ShowDemoWindow();
+
 		
+		ImGui::Begin("Control panel");
+		ImGui::SliderInt("Iterations", &ITERATIONS, 0, 1000);
+		ImGui::End();
 
 		
 		
@@ -222,7 +227,7 @@ int main()
 		glUniform2f(glGetUniformLocation(shaderProgram.ID, "Resolution"), (float)WIDTH, (float)HEIGHT);
 		glUniform3f(glGetUniformLocation(shaderProgram.ID, "Orientation"), Orientation.x, Orientation.y, Orientation.z);
 		glUniform3f(glGetUniformLocation(shaderProgram.ID, "Cam_pos"), Position.x, Position.y, Position.z);
-
+		glUniform1i(glGetUniformLocation(shaderProgram.ID, "Iterations"), ITERATIONS);
 		// Bind the VAO so OpenGL knows to use it
 		VAO1.Bind();
 		// Draw primitives, number of indices, datatype of indices, index of indices
