@@ -7,7 +7,7 @@
 #include<glm/gtx/rotate_vector.hpp>
 #include<glm/gtx/transform.hpp>
 #include<glm/gtx/vector_angle.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include<glm/gtc/type_ptr.hpp>
 
 
 #include<imgui.h>
@@ -24,7 +24,8 @@
 #include<string>
 #define Up glm::vec3(0,-1,0)
 
-extern bool MOUSE_LOCK = true;
+//extern bool MOUSE_LOCK;
+bool MOUSE_LOCK = true;
 
 int WIDTH = 800;
 int HEIGHT = 800;

@@ -1,11 +1,18 @@
-cmake_minimum_required(VERSION 3.5.0)
+cmake_minimum_required(VERSION 3.10.0)
 project(ray_marching VERSION 0.1.0)
 cmake_policy(SET CMP0072 NEW)
 find_package(OpenGL REQUIRED)
-include_directories(include)
+
+include_directories(include include/imgui)
 
 
-file(GLOB raySRC CONFIGURE_DEPENDS "include/*.h" "src/*.cpp" "src/*.c" "imgui/*.cpp")
+file(GLOB raySRC CONFIGURE_DEPENDS 
+    "include/*.h" 
+    "include/imgui/*.h"
+    "src/imgui/*.cpp"
+    "src/*.cpp" 
+    "src/*.c"
+)
 
 
 
