@@ -21,7 +21,7 @@ float bulb(vec3 p )
     vec4 trap = vec4(abs(w),m);
 	float dz = 1.0;
     
-	for( int i=0; i<5; i++ )
+	for( int i=0; i<2; i++ )
     {
 
         // trigonometric version (MUCH faster than polynomial)
@@ -66,7 +66,8 @@ float testSDFComplitation(vec3 ray)
     
     //return max(-sphere(150, vec3(0,0,200), ray), box(vec3(100,100,100), vec3(0,0,300),ray));
     //return min(sphere(150, vec3(0,200,200), ray), box(vec3(100,100,100), vec3(0,0,300),ray));
-    return bulb(ray);
+    return min(box(vec3(1,1,1), vec3(0,0,3),ray), bulb(ray));
+    
     //return sphere(100, vec3(0,200,300), ray);
 }
 vec3 normal(vec3 point) {
@@ -92,22 +93,41 @@ void main() {
     vec3 raydir = normalize(ray);
     raydir = right * raydir.x + localUp * raydir.y + Orientation * raydir.z;
     ray = Cam_pos;
+    float min_dist = 0.0001;
     float dist = 0.0;
 
     if (testSDFComplitation(Cam_pos) < 0) {
         raydir *= -1.0;
     }
-    
+    vec3 current_raydir = raydir;
+    int ref_count = 0;
     for (int i = 0; i< Iterations; ++i) {
         //ray = repeat(ray, vec3(1000.0, 1000.0, 1000.0));
         dist = testSDFComplitation(ray);
+        // if (box(vec3(1,1,1), vec3(0,0,3),ray) < min_dist) {
+        //     current_raydir = reflect(current_raydir, normal(ray));
+        // }
+
+        if (box(vec3(1,1,1), vec3(0,0,3),ray) >  bulb(ray) && dist <= min_dist && ref_count == 0) {
+            current_raydir = reflect(current_raydir, normal(ray));
+            ref_count++;
+        }
         
-        ray += raydir * dist;
+        ray += current_raydir * dist;
         
         
     }
-
+    
     //FragColor = vec4(gl_FragCoord.xy/Resolution.xy,1,1);
-    FragColor = vec4(normal(ray) / 2.0f + 0.5f, 1.0);
+    vec4 clr = vec4(normal(ray) / 2.0f + 0.5f, 1.0);
+    if(dist >= 0.001) {
+        if(ray.y > 0) {
+            FragColor = vec4(0.5,0.5,0.5,1);
+        }else{
+            FragColor = vec4(0,0.6,0, 1);
+        }
+    } else {
+        FragColor = clr;
+    }
     
 }
