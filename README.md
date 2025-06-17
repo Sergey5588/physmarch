@@ -3,9 +3,13 @@ Raymarching game engine made by me and my friend [@MAX-TS](https://github.com/MA
 
 `git clone https://github.com/Sergey5588/physmarch`
 `cd physmarch`
+
 `mkdir build`
+
 `cd build`
+
 `cmake ..`
+
 `make`
 
 ## To do
