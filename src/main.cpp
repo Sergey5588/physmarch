@@ -119,7 +119,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	if(MOUSE_LOCK) {
-		printf("%f %f\n\0", xoffset, yoffset);
 
 		SPEED *= 1.0 + yoffset * 0.05;
 	}
