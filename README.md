@@ -7,7 +7,8 @@ cd physmarch &&
 mkdir build &&
 cd build &&
 cmake .. &&
-make```
+make
+```
 
 ## To do
 - [x] basic raymarching
