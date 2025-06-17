@@ -26,7 +26,7 @@
 
 //extern bool MOUSE_LOCK;
 bool MOUSE_LOCK = true;
-
+float SPEED = 0.01f;
 int WIDTH = 800;
 int HEIGHT = 800;
 
@@ -59,34 +59,29 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 
 void HandleInput(GLFWwindow* window, glm::vec3& Orientation, glm::vec3& Position, int height, int width) {
 
-	float speed = 10.0f;
+	
 	if (MOUSE_LOCK) {
 
 		
-		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-		{
-			Position += Orientation * speed;
+		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+			Position += Orientation * SPEED;
 		}
-		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-		{
-			Position -= Orientation * speed;
+		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+			Position -= Orientation * SPEED;
 		}
-		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-		{
-			Position -= glm::normalize(glm::cross(Orientation, Up)) * speed;
+		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+			Position -= glm::normalize(glm::cross(Orientation, Up)) * SPEED;
 		}
-		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-		{
-			Position += glm::normalize(glm::cross(Orientation, Up)) * speed;
+		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+			Position += glm::normalize(glm::cross(Orientation, Up)) * SPEED;
 		}
-		if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS)
-		{
-			Position -= Up * speed;
+		if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+			Position -= Up * SPEED;
 		}
-		if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS)
-		{
-			Position += Up * speed;
+		if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+			Position += Up * SPEED;
 		}
+		
 		
 			
 		
@@ -119,6 +114,15 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	glViewport(0, 0, width, height);
 	WIDTH = width;
 	HEIGHT = height;
+}
+
+void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
+{
+	if(MOUSE_LOCK) {
+		printf("%f %f\n\0", xoffset, yoffset);
+
+		SPEED *= 1.0 + yoffset * 0.05;
+	}
 }
 
 int main()
@@ -196,6 +200,9 @@ int main()
 	glfwSetCursorPos(window, WIDTH/2, HEIGHT/2);
 	glfwSwapInterval(1);
 	glfwSetKeyCallback(window, key_callback);
+
+	glfwSetScrollCallback(window, scroll_callback);
+	
 	while (!glfwWindowShouldClose(window))
 	{	
 		if(MOUSE_LOCK)
