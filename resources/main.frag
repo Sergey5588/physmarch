@@ -1,5 +1,4 @@
 #version 460 core
-
 uniform vec2 Resolution;
 uniform vec3 Orientation;
 uniform vec3 Cam_pos;
@@ -13,18 +12,58 @@ float box(vec3 sizes, vec3 pos, vec3 ray) {
 
 }
 
+float bulb(vec3 p, float power) {
+    //p = p/20;
+    vec3 z = p;
+    float dr = 1.0;
+    float r = 0.0;
+    
+    for (int i = 0; i < 32; i++) { // Increased iterations
+        r = length(z);
+        
+        if (r > 4.0) // Increased bailout radius
+            break;
+        
+        // Convert to polar coordinates
+        float theta = acos(z.z / r);
+        float phi = atan(z.y, z.x); // Use 2-argument atan
+        float zr = pow(r, power);
+        
+        dr = pow(r, power - 1.0) * power * dr + 1.0;
+        
+        // Scale and rotate the point
+        theta = theta * power;
+        phi = phi * power;
+        
+        // Convert back to cartesian coordinates
+        z = zr * vec3(sin(theta) * cos(phi), sin(theta) * sin(phi), cos(theta));
+        z += p;
+    }
+    
+    return 0.5 * log(r) * r / dr;
+}
+
 
 vec3 repeat(vec3 p, vec3 c) {
     return mod(p + 0.5 * c, c) - 0.5 * c;
 }
+
+
+
+// correct way to repeat space every s units
+
+
 
 float sphere(float radius, vec3 pos, vec3 ray) {
     return length(pos-ray)-radius;
 }
 float testSDFComplitation(vec3 ray)
 {
-
-    return max(-sphere(150, vec3(0,0,200), ray), box(vec3(100,100,100), vec3(0,0,300),ray));
+    
+    //return max(-sphere(150, vec3(0,0,200), ray), box(vec3(100,100,100), vec3(0,0,300),ray));
+    //return min(sphere(150, vec3(0,200,200), ray), box(vec3(100,100,100), vec3(0,0,300),ray));
+    return bulb(ray, 8.0);
+    //return sphere(100, vec3(0,200,300), ray);
 }
 vec3 normal(vec3 point) {
     vec2 e = vec2(.01, 0); // x smol, y none
@@ -51,17 +90,10 @@ void main() {
     ray = Cam_pos;
     float dist = 0.0;
     
-    // while(dist >=0.000001) {
-    //     dist = sphere(100.0f, vec3(400,400,1000), ray);
-    //     ray += raydir * dist;
-        
-    //     if (dist >= 1000000) {
-    //         break;
-    //     }
-    // }
     for (int i = 0; i< Iterations; ++i) {
-        ray = repeat(ray, vec3(1000.0, 1000.0, 1000.0));
+        //ray = repeat(ray, vec3(1000.0, 1000.0, 1000.0));
         dist = testSDFComplitation(ray);
+        if(dist < 0.001) break;
         ray += raydir * dist;
 
         
