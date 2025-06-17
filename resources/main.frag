@@ -14,14 +14,14 @@ float box(vec3 sizes, vec3 pos, vec3 ray) {
 
 float bulb(vec3 p )
 {
-    p = p/20.0;
+    //p = p/20.0;
     vec3 w = p;
     float m = dot(w,w);
 
     vec4 trap = vec4(abs(w),m);
 	float dz = 1.0;
     
-	for( int i=0; i<4; i++ )
+	for( int i=0; i<5; i++ )
     {
 
         // trigonometric version (MUCH faster than polynomial)
@@ -70,7 +70,7 @@ float testSDFComplitation(vec3 ray)
     //return sphere(100, vec3(0,200,300), ray);
 }
 vec3 normal(vec3 point) {
-    vec2 e = vec2(.01, 0); // x smol, y none
+    vec2 e = vec2(.0001, 0); // x smol, y none
     float dist = testSDFComplitation(point);
     // Find normal as tangent of distance function
     return normalize(dist - vec3(
@@ -93,6 +93,10 @@ void main() {
     raydir = right * raydir.x + localUp * raydir.y + Orientation * raydir.z;
     ray = Cam_pos;
     float dist = 0.0;
+
+    if (testSDFComplitation(Cam_pos) < 0) {
+        raydir *= -1.0;
+    }
     
     for (int i = 0; i< Iterations; ++i) {
         //ray = repeat(ray, vec3(1000.0, 1000.0, 1000.0));
