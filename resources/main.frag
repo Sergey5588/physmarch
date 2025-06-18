@@ -4,6 +4,8 @@ uniform vec3 Orientation;
 uniform vec3 Cam_pos;
 uniform int Iterations = 100;
 out vec4 FragColor;
+
+const int ray_depth = 10;
 float box(vec3 sizes, vec3 pos, vec3 ray) {
     
     vec3 q = abs(pos - ray) - sizes;
@@ -21,7 +23,7 @@ float bulb(vec3 p )
     vec4 trap = vec4(abs(w),m);
 	float dz = 1.0;
     
-	for( int i=0; i<2; i++ )
+	for( int i=0; i<3; i++ )
     {
 
         // trigonometric version (MUCH faster than polynomial)
@@ -99,6 +101,8 @@ void main() {
     if (testSDFComplitation(Cam_pos) < 0) {
         raydir *= -1.0;
     }
+
+    
     vec3 current_raydir = raydir;
     int ref_count = 0;
     for (int i = 0; i< Iterations; ++i) {
@@ -107,13 +111,21 @@ void main() {
         // if (box(vec3(1,1,1), vec3(0,0,3),ray) < min_dist) {
         //     current_raydir = reflect(current_raydir, normal(ray));
         // }
+        
 
-        if (box(vec3(1,1,1), vec3(0,0,3),ray) >  bulb(ray) && dist <= min_dist && ref_count == 0) {
-            current_raydir = reflect(current_raydir, normal(ray));
-            ref_count++;
-        }
+        // if (box(vec3(1,1,1), vec3(0,0,3),ray) <  bulb(ray) && dist <= min_dist) {
+        //     for(int j = 0; j < ray_depth; ++j) {
+
+        //         dist = testSDFComplitation(ray);
+        //         current_raydir = reflect(current_raydir, normal(ray));
+                
+                
+        //     }
+            
+        // }
         
         ray += current_raydir * dist;
+        
         
         
     }

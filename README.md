@@ -1,9 +1,12 @@
 Raymarching game engine made by me and my friend [@MAX-TS](https://github.com/MAX-TS)
+
+Also, check website for our project: [physmarch.com](https://physmarch.com)!
 ## Compile from source
+> :warning: Note: Only linux  X11 is supported! (wayland session as well as other operating systems are not tested. I'd be happy if you became a tester :wink: .)
 
 First, install following dependencies with your package manager:
 
-`opengl cmake glfw`
+```opengl cmake glfw```
 
 then run this command:
 
@@ -15,7 +18,14 @@ cd build &&
 cmake .. &&
 make
 ```
+## Features
+- Precise 3D fractal rendering, such as Mandelbulb
+- Precise ray reflections
+- No polygons, pure maths!
 
+## Default controls
+- WASD - move
+- Q and E - up and down respectively
 ## To do
 - [x] basic raymarching
 - [ ] game engine API
