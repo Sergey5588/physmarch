@@ -4,14 +4,29 @@ uniform vec3 Orientation;
 uniform vec3 Cam_pos;
 uniform int Iterations = 100;
 out vec4 FragColor;
+#define M_PI 3.1415926535897932384626433832795
 
-const int ray_depth = 10;
+const float MAX_DIST = 10000;
+const float min_dist = 0.00001;
+float plane(vec3 N, vec3 origin){
+    
+    return 0;
+}
+
 float box(vec3 sizes, vec3 pos, vec3 ray) {
     
     vec3 q = abs(pos - ray) - sizes;
     return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
     
 
+}
+
+float angleBetween(vec3 A, vec3 B) {
+    float dotAB = dot(A, B);
+    float lenA = length(A);
+    float lenB = length(B);
+    float cosTheta = dotAB / (lenA * lenB);
+    return cosTheta; // cos
 }
 
 float bulb(vec3 p )
@@ -68,7 +83,7 @@ float testSDFComplitation(vec3 ray)
     
     //return max(-sphere(150, vec3(0,0,200), ray), box(vec3(100,100,100), vec3(0,0,300),ray));
     //return min(sphere(150, vec3(0,200,200), ray), box(vec3(100,100,100), vec3(0,0,300),ray));
-    return min(box(vec3(1,1,1), vec3(0,0,3),ray), bulb(ray));
+    return min(sphere(1, vec3(0,0,3),ray), bulb(ray));
     
     //return sphere(100, vec3(0,200,300), ray);
 }
@@ -95,7 +110,7 @@ void main() {
     vec3 raydir = normalize(ray);
     raydir = right * raydir.x + localUp * raydir.y + Orientation * raydir.z;
     ray = Cam_pos;
-    float min_dist = 0.0001;
+    
     float dist = 0.0;
 
     if (testSDFComplitation(Cam_pos) < 0) {
@@ -106,23 +121,20 @@ void main() {
     vec3 current_raydir = raydir;
     int ref_count = 0;
     for (int i = 0; i< Iterations; ++i) {
-        //ray = repeat(ray, vec3(1000.0, 1000.0, 1000.0));
-        dist = testSDFComplitation(ray);
+        // ray = repeat(ray, vec3(1000.0, 1000.0, 1000.0));
         // if (box(vec3(1,1,1), vec3(0,0,3),ray) < min_dist) {
-        //     current_raydir = reflect(current_raydir, normal(ray));
+        //     
         // }
         
-
-        // if (box(vec3(1,1,1), vec3(0,0,3),ray) <  bulb(ray) && dist <= min_dist) {
-        //     for(int j = 0; j < ray_depth; ++j) {
-
-        //         dist = testSDFComplitation(ray);
-        //         current_raydir = reflect(current_raydir, normal(ray));
-                
-                
-        //     }
+        dist = testSDFComplitation(ray);
+        if(dist <= min_dist || dist >= MAX_DIST) break;
+        if (sphere(1, vec3(0,0,3),ray) <  bulb(ray) && dist < min_dist && false) {
             
-        // }
+            current_raydir = reflect(current_raydir, normal(ray));
+            float boost = min_dist*angleBetween(current_raydir, normal(ray))*(1+min_dist);
+            dist+=(boost);
+            
+        }
         
         ray += current_raydir * dist;
         
@@ -133,11 +145,8 @@ void main() {
     //FragColor = vec4(gl_FragCoord.xy/Resolution.xy,1,1);
     vec4 clr = vec4(normal(ray) / 2.0f + 0.5f, 1.0);
     if(dist >= 0.001) {
-        if(ray.y > 0) {
-            FragColor = vec4(0.5,0.5,0.5,1);
-        }else{
-            FragColor = vec4(0,0.6,0, 1);
-        }
+        FragColor = vec4(0.5,0.5,0.5,1);
+        
     } else {
         FragColor = clr;
     }

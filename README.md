@@ -20,19 +20,26 @@ make
 ```
 ## Features
 - Precise 3D fractal rendering, such as Mandelbulb
-- Precise ray reflections
+- Precise ray reflections (no RTX required!)
 - No polygons, pure maths!
-
+##### Supported primitives
+- Plane
+- Sphere
+- Box
+##### Supported operations
+- :cry:
 ## Default controls
 - WASD - move
 - Q and E - up and down respectively
 ## To do
 - [x] basic raymarching
+- [ ] operations between shapes
+- [ ] texturing
+- [ ] shading
 - [ ] game engine API
 - [ ] proper scene system
 - [ ] shape editor
 - [ ] physics engine
-- [ ] texturing
 
 ## License
 
