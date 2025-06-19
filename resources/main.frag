@@ -36,15 +36,14 @@ float bulb(vec3 p )
     float m = dot(w,w);
 
     vec4 trap = vec4(abs(w),m);
-  float dz = 1.0;
+    float dz = 1.0;
     
-  for( int i=0; i<3; i++ )
-    {
+    for( int i=0; i<3; i++ ) {
 
         // trigonometric version (MUCH faster than polynomial)
         
         // dz = 8*z^7*dz
-    dz = 8.0*pow(m,3.5)*dz + 1.0;
+        dz = 8.0*pow(m,3.5)*dz + 1.0;
       
         // z = z^8+c
         float r = length(w);
@@ -56,8 +55,7 @@ float bulb(vec3 p )
         trap = min( trap, vec4(abs(w),m) );
 
         m = dot(w,w);
-    if( m > 256.0 )
-            break;
+        if( m > 256.0 ) break;
     }
 
 
@@ -71,7 +69,6 @@ vec3 repeat(vec3 p, vec3 c) {
 
 
 
-// correct way to repeat space every s units
 
 
 
@@ -81,8 +78,7 @@ float sphere(float radius, vec3 pos, vec3 ray) {
 float testSDFComplitation(vec3 ray)
 {
     
-    //return max(-sphere(150, vec3(0,0,200), ray), box(vec3(100,100,100), vec3(0,0,300),ray));
-    //return min(sphere(150, vec3(0,200,200), ray), box(vec3(100,100,100), vec3(0,0,300),ray));
+
     float sc = min(sphere(1, vec3(0,0,3),ray),box(vec3(2,2,2), vec3(0,0,-1), ray));
     sc = min(sc, plane(normalize(vec4(1,0,1,2)), ray));
     
