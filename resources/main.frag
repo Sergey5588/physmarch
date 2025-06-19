@@ -7,7 +7,7 @@ out vec4 FragColor;
 #define M_PI 3.1415926535897932384626433832795
 
 const float MAX_DIST = 10000;
-const float min_dist = 0.001;
+const float min_dist = 0.00001;
 float plane(vec4 N, vec3 ray){
     
      return dot(ray,N.xyz) + N.w;
@@ -83,8 +83,8 @@ float testSDFComplitation(vec3 ray)
     
     //return max(-sphere(150, vec3(0,0,200), ray), box(vec3(100,100,100), vec3(0,0,300),ray));
     //return min(sphere(150, vec3(0,200,200), ray), box(vec3(100,100,100), vec3(0,0,300),ray));
-    float sc = min(sphere(1, vec3(0,0,3),ray),bulb(ray));
-    //float sc = bulb(ray);
+    float sc = min(sphere(1, vec3(0,0,3),ray),box(vec3(2,2,2), vec3(0,0,-1), ray));
+    sc = min(sc, plane(normalize(vec4(1,0,1,1)), ray));
     
     return sc;
     
