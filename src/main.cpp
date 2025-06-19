@@ -30,7 +30,7 @@ float SPEED = 0.01f;
 int WIDTH = 800;
 int HEIGHT = 800;
 
-int ITERATIONS = 100;
+int ITERATIONS = 256;
 // Vertices coordinates
 GLfloat vertices[] =
 {
