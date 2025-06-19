@@ -7,10 +7,10 @@ out vec4 FragColor;
 #define M_PI 3.1415926535897932384626433832795
 
 const float MAX_DIST = 10000;
-const float min_dist = 0.00001;
-float plane(vec3 N, vec3 origin){
+const float min_dist = 0.001;
+float plane(vec4 N, vec3 ray){
     
-    return 0;
+     return dot(ray,N.xyz) + N.w;
 }
 
 float box(vec3 sizes, vec3 pos, vec3 ray) {
@@ -36,15 +36,15 @@ float bulb(vec3 p )
     float m = dot(w,w);
 
     vec4 trap = vec4(abs(w),m);
-	float dz = 1.0;
+  float dz = 1.0;
     
-	for( int i=0; i<3; i++ )
+  for( int i=0; i<3; i++ )
     {
 
         // trigonometric version (MUCH faster than polynomial)
         
         // dz = 8*z^7*dz
-		dz = 8.0*pow(m,3.5)*dz + 1.0;
+    dz = 8.0*pow(m,3.5)*dz + 1.0;
       
         // z = z^8+c
         float r = length(w);
@@ -56,7 +56,7 @@ float bulb(vec3 p )
         trap = min( trap, vec4(abs(w),m) );
 
         m = dot(w,w);
-		if( m > 256.0 )
+    if( m > 256.0 )
             break;
     }
 
@@ -83,7 +83,10 @@ float testSDFComplitation(vec3 ray)
     
     //return max(-sphere(150, vec3(0,0,200), ray), box(vec3(100,100,100), vec3(0,0,300),ray));
     //return min(sphere(150, vec3(0,200,200), ray), box(vec3(100,100,100), vec3(0,0,300),ray));
-    return min(sphere(1, vec3(0,0,3),ray), bulb(ray));
+    float sc = min(sphere(1, vec3(0,0,3),ray),bulb(ray));
+    //float sc = bulb(ray);
+    
+    return sc;
     
     //return sphere(100, vec3(0,200,300), ray);
 }
@@ -127,14 +130,14 @@ void main() {
         // }
         
         dist = testSDFComplitation(ray);
-        if(dist <= min_dist || dist >= MAX_DIST) break;
-        if (sphere(1, vec3(0,0,3),ray) <  bulb(ray) && dist < min_dist && false) {
+        
+        if (sphere(1, vec3(0,0,3),ray) <  bulb(ray) && dist < min_dist) {
             
             current_raydir = reflect(current_raydir, normal(ray));
             float boost = min_dist*angleBetween(current_raydir, normal(ray))*(1+min_dist);
             dist+=(boost);
-            
-        }
+        }    
+        // } else if (dist < min_dist) break;
         
         ray += current_raydir * dist;
         
@@ -145,10 +148,15 @@ void main() {
     //FragColor = vec4(gl_FragCoord.xy/Resolution.xy,1,1);
     vec4 clr = vec4(normal(ray) / 2.0f + 0.5f, 1.0);
     if(dist >= 0.001) {
-        FragColor = vec4(0.5,0.5,0.5,1);
+        if(ray.y > 0) {
+
+            FragColor = vec4(0.06, 0.67, 0.69, 1.0);
+        } else{
+            FragColor = vec4(0.06, 0.53, 0.0, 1.0);
+        }
         
     } else {
         FragColor = clr;
     }
-    
+    //FragColor = clr;
 }
