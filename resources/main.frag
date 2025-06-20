@@ -8,6 +8,16 @@ out vec4 FragColor;
 
 const float MAX_DIST = 10000;
 const float min_dist = 0.00001;
+
+
+float torus(  vec3 pos, vec2 t, vec3 ray )
+{
+    vec3 p = ray - pos;
+    vec2 q = vec2(length(p.xz)-t.x,p.y);
+    return length(q)-t.y;
+}
+
+
 float plane(vec4 N, vec3 ray){
     
     return dot(ray,N.xyz) + N.w;
@@ -80,7 +90,7 @@ float testSDFComplitation(vec3 ray)
     
 
     float sc = min(sphere(1, vec3(0,0,3),ray),box(vec3(2,2,2), vec3(0,0,-1), ray));
-    sc = min(sc, plane(normalize(vec4(1,0,1,2)), ray));
+    sc = min(sc, torus(vec3(0,4,0), vec2(2,1),ray));
     
     return sc;
     
@@ -127,7 +137,7 @@ void main() {
         
         dist = testSDFComplitation(ray);
         
-        if (sphere(1, vec3(0,0,3),ray) <  box(vec3(2,2,2), vec3(0,0,-1), ray) && sphere(1, vec3(0,0,3),ray) < plane(normalize(vec4(0,0,1,2)), ray) && dist < min_dist) {
+        if (sphere(1, vec3(0,0,3),ray) <  box(vec3(2,2,2), vec3(0,0,-1), ray) && sphere(1, vec3(0,0,3),ray) < torus(vec3(0,4,0), vec2(2,1),ray) && dist < min_dist) {
             
             current_raydir = reflect(current_raydir, normal(ray));
             float boost = min_dist*angleBetween(current_raydir, normal(ray))*(1+min_dist);
