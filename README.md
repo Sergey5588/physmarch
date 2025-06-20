@@ -32,6 +32,8 @@ make
 - Plane
 - Sphere
 - Box
+
+> Taken from: [marklundin/glsl-sdf-primitives](https://github.com/marklundin/glsl-sdf-primitives)
 ##### Supported operations
 - :cry:
 ## Default controls
