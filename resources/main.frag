@@ -147,7 +147,7 @@ float getDist(vec3 ray, Object obj) {
     return 0.0;
 }
 
-float testSDFComplitation(vec3 ray)
+float sdfMap(vec3 ray)
 {
     
     float sc = 9999.0;
@@ -174,12 +174,12 @@ float testSDFComplitation(vec3 ray)
 
 vec3 normal(vec3 point) {
     vec2 e = vec2(.0001, 0); // x smol, y none
-    float dist = testSDFComplitation(point);
+    float dist = sdfMap(point);
     // Find normal as tangent of distance function
     return normalize(dist - vec3(
-        testSDFComplitation(point - e.xyy),
-        testSDFComplitation(point - e.yxy),
-        testSDFComplitation(point - e.yyx)
+        sdfMap(point - e.xyy),
+        sdfMap(point - e.yxy),
+        sdfMap(point - e.yyx)
     ));
 }
 
@@ -198,7 +198,7 @@ void main() {
     
     float dist = 0.0;
 
-    if (testSDFComplitation(Cam_pos) < 0) {
+    if (sdfMap(Cam_pos) < 0) {
         raydir *= -1.0;
     }
 
@@ -210,7 +210,7 @@ void main() {
         //     
         // }
         
-        dist = testSDFComplitation(ray);
+        dist = sdfMap(ray);
         
         // if (sphere(1, vec3(0,0,3),ray) <  box(vec3(2,2,2), vec3(0,0,-1), ray) && sphere(1, vec3(0,0,3),ray) < torus(vec3(0,4,0), vec2(2,1),ray) && dist < min_dist) {
             
@@ -223,16 +223,27 @@ void main() {
         
         ray += current_raydir * dist;
         
-        
-        
+    }
+
+    vec3 shadow_ray = ray + sun_dir * 0.02;
+    float shadow_dist = 0.1;
+    for (int i = 0; i < 100; i++) {
+        shadow_dist = sdfMap(shadow_ray);
+        shadow_ray += shadow_dist * (sun_dir);
     }
     
     //FragColor = vec4(gl_FragCoord.xy/Resolution.xy,1,1);
-    vec3 obj_color = (normal(ray) / 2.0f + 0.5f) * (max(dot(normal(ray), sun_dir), 0.0) + 0.3);
+    float coef = 1.0;
+
+    if(length(shadow_ray - ray) < 99.0) {
+        coef = 0.0;
+    }
+
+    vec3 obj_color = (normal(ray) / 2.0f + 0.5f)   * ((max(dot(normal(ray), sun_dir), 0.0)) * coef + 0.3);
     vec4 clr = vec4(obj_color + specular(Cam_pos, ray, -sun_dir, normal(ray), materials[0].roughness), 1.0);
     if(dist >= 0.001) {
         if(ray.y > 0) {
-            if (dot(raydir, sun_dir) > 0.9) {
+            if (dot(raydir, sun_dir) > 0.99) {
                 FragColor = vec4(1.0);
             }
             else {
