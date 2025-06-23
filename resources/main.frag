@@ -5,25 +5,34 @@ uniform vec3 Cam_pos;
 uniform int Iterations = 256;
 out vec4 FragColor;
 #define M_PI 3.1415926535897932384626433832795
+// types:
+// 0 - sphere
+// 1 - box
+// 2 - prism
+// 3 - etc
+
+
+// 0 - base
 
 const float MAX_DIST = 10000;
 const float min_dist = 0.00001;
 
 
-float torus(  vec3 pos, vec2 t, vec3 ray )
-{
-    vec3 p = ray - pos;
-    vec2 q = vec2(length(p.xz)-t.x,p.y);
-    return length(q)-t.y;
+
+struct Object {
+    int type;
+    int operation;
+    vec3 pos;
+    vec4 args;
+
+};
+const Object scene[] = {Object(0, 0, vec3(0,2,0), vec4(1)), Object(1, 0, vec3(0), vec4(1))};
+
+float sphere(vec3 pos, vec3 ray, float radius) {
+    return length(pos-ray)-radius;
 }
 
-
-float plane(vec4 N, vec3 ray){
-    
-    return dot(ray,N.xyz) + N.w;
-}
-
-float box(vec3 sizes, vec3 pos, vec3 ray) {
+float box(vec3 pos, vec3 ray, vec3 sizes) {
     
     vec3 q = abs(pos - ray) - sizes;
     return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
@@ -31,12 +40,24 @@ float box(vec3 sizes, vec3 pos, vec3 ray) {
 
 }
 
-float angleBetween(vec3 A, vec3 B) {
-    float dotAB = dot(A, B);
-    float lenA = length(A);
-    float lenB = length(B);
-    float cosTheta = dotAB / (lenA * lenB);
-    return cosTheta; // cos
+float TriPrism( vec3 pos, vec3 ray, vec2 h)
+{
+    vec3 p = ray - pos;
+    vec3 q = abs(p);
+    return max(q.z-h.y,max(q.x*0.866025+p.y*0.5,-p.y)-h.x*0.5);
+}
+
+float torus(  vec3 pos, vec3 ray, vec2 t )
+{
+    vec3 p = ray - pos;
+    vec2 q = vec2(length(p.xz)-t.x,p.y);
+    return length(q)-t.y;
+}
+
+
+float plane(vec3 ray, vec4 N){
+    
+    return dot(ray,N.xyz) + N.w;
 }
 
 float bulb(vec3 p )
@@ -79,23 +100,53 @@ vec3 repeat(vec3 p, vec3 c) {
 
 
 
-
-
-
-float sphere(float radius, vec3 pos, vec3 ray) {
-    return length(pos-ray)-radius;
+float angleBetween(vec3 A, vec3 B) {
+    float dotAB = dot(A, B);
+    float lenA = length(A);
+    float lenB = length(B);
+    float cosTheta = dotAB / (lenA * lenB);
+    return cosTheta; // cos
 }
+
+float getDist(vec3 ray, Object obj) {
+    switch (obj.type) {
+        case 0:
+            return sphere(obj.pos, ray, obj.args.x);
+        case 1:
+            return box(obj.pos, ray, obj.args.xyz);
+    
+    }
+    
+    
+    
+    return 0.0;
+}
+
 float testSDFComplitation(vec3 ray)
 {
     
+    float sc = 999999999999999.0;
 
-    float sc = min(sphere(1, vec3(0,0,3),ray),box(vec3(2,2,2), vec3(0,0,-1), ray));
-    sc = min(sc, torus(vec3(0,4,0), vec2(2,1),ray));
+    if(scene.length() == 1) return getDist(ray, scene[0]);
+
+    for(int i = 1; i < scene.length(); i++) {
+        
+        if(i==1) {
+            sc = min(getDist(ray, scene[i-1]), getDist(ray, scene[i]));
+        } else {
+
+            sc = min(sc, getDist(ray, scene[i]));
+        }
+
+    }
+    // float sc = min(sphere(1, vec3(0,0,3),ray),box(vec3(2,2,2), vec3(0,0,-1), ray));
+    // sc = min(sc, TriPrism(vec3(0,5,0),vec2(1,1), ray));
     
     return sc;
     
     //return sphere(100, vec3(0,200,300), ray);
 }
+
 vec3 normal(vec3 point) {
     vec2 e = vec2(.0001, 0); // x smol, y none
     float dist = testSDFComplitation(point);
@@ -136,13 +187,14 @@ void main() {
         
         dist = testSDFComplitation(ray);
         
-        if (sphere(1, vec3(0,0,3),ray) <  box(vec3(2,2,2), vec3(0,0,-1), ray) && sphere(1, vec3(0,0,3),ray) < torus(vec3(0,4,0), vec2(2,1),ray) && dist < min_dist) {
+        // if (sphere(1, vec3(0,0,3),ray) <  box(vec3(2,2,2), vec3(0,0,-1), ray) && sphere(1, vec3(0,0,3),ray) < torus(vec3(0,4,0), vec2(2,1),ray) && dist < min_dist) {
             
-            current_raydir = reflect(current_raydir, normal(ray));
-            float boost = min_dist*angleBetween(current_raydir, normal(ray))*(1+min_dist);
-            dist+=(boost);
-        //}    
-        } else if (dist > MAX_DIST) break;
+        //     current_raydir = reflect(current_raydir, normal(ray));
+        //     float boost = min_dist*angleBetween(current_raydir, normal(ray))*(1+min_dist);
+        //     dist+=(boost);
+        // //}    
+        // } else if (dist > MAX_DIST) break;
+        if (dist > MAX_DIST) break;
         
         ray += current_raydir * dist;
         
