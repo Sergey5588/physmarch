@@ -128,7 +128,6 @@ void main() {
 
     
     vec3 current_raydir = raydir;
-    int ref_count = 0;
     for (int i = 0; i< Iterations; ++i) {
         // ray = repeat(ray, vec3(1000.0, 1000.0, 1000.0));
         // if (box(vec3(1,1,1), vec3(0,0,3),ray) < min_dist) {
