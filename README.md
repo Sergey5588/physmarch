@@ -35,6 +35,8 @@ make
 - Plane
 - Sphere
 - Box
+- Torus
+- Triangular prism
 
 > Taken from: [marklundin/glsl-sdf-primitives](https://github.com/marklundin/glsl-sdf-primitives)
 ##### Supported operations
