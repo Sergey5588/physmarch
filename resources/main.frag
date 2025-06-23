@@ -17,7 +17,7 @@ out vec4 FragColor;
 const float MAX_DIST = 10000;
 const float min_dist = 0.00001;
 
-vec3 sun_dir = vec3(0.0, sin(M_PI / 4.0), cos(M_PI / 4.0));
+vec3 sun_dir = normalize(vec3(1, 2, 3));
 
 struct Material {
     float roughness;
@@ -35,12 +35,14 @@ struct Object {
 
 
 const Material materials[] = {
-    Material(0.5, vec4(1,0,1,1), false)
+    Material(0, vec4(1,0,1,1), false)
 };
 
 const Object scene[] = {
-    Object(0, 0, vec3(0,2,0), vec4(1), 0), 
-    Object(1, 0, vec3(0), vec4(1),0)
+    Object(0, 0, vec3(0,8,0), vec4(1), 0), 
+    Object(1, 0, vec3(0,6,0), vec4(1),0),
+    //Object(5, 0, vec3(0), vec4(0), 0),
+    Object(6, 0, vec3(0, 5, 0), vec4(0), 0)
 };
 
 // borrowed from https://www.shadertoy.com/view/33S3Rh
@@ -139,6 +141,10 @@ float getDist(vec3 ray, Object obj) {
             return sphere(obj.pos, ray, obj.args.x);
         case 1:
             return box(obj.pos, ray, obj.args.xyz);
+        case 5:
+            return bulb(ray);
+        case 6:
+            return ray.y - obj.pos.y;
     
     }
     
