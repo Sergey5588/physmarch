@@ -11,22 +11,47 @@ out vec4 FragColor;
 // 2 - prism
 // 3 - etc
 
-
+// operations
 // 0 - base
 
 const float MAX_DIST = 10000;
 const float min_dist = 0.00001;
 
+vec3 sun_dir = vec3(0.0, sin(M_PI / 4.0), cos(M_PI / 4.0));
 
+struct Material {
+    float roughness;
+    vec4 color;
+    bool reflective;
+};
 
 struct Object {
     int type;
     int operation;
     vec3 pos;
     vec4 args;
-
+    int material_id;
 };
-const Object scene[] = {Object(0, 0, vec3(0,2,0), vec4(1)), Object(1, 0, vec3(0), vec4(1))};
+
+
+const Material materials[] = {
+    Material(0.5, vec4(1,0,1,1), false)
+};
+
+const Object scene[] = {
+    Object(0, 0, vec3(0,2,0), vec4(1), 0), 
+    Object(1, 0, vec3(0), vec4(1),0)
+};
+
+// borrowed from https://www.shadertoy.com/view/33S3Rh
+float specular(vec3 camera_pos, vec3 point, vec3 lightDir, vec3 normal, float rougness) {
+    float a_coeff_2 = dot(normalize(normalize(camera_pos-point)-lightDir), normal);
+    a_coeff_2 *= a_coeff_2;
+    float specular = exp(-(1.0-a_coeff_2)/(a_coeff_2*rougness))/(M_PI*rougness*a_coeff_2*a_coeff_2); // cool phycics based specular
+    specular = max(specular, 0.0);
+
+    return specular;
+}
 
 float sphere(vec3 pos, vec3 ray, float radius) {
     return length(pos-ray)-radius;
@@ -125,7 +150,7 @@ float getDist(vec3 ray, Object obj) {
 float testSDFComplitation(vec3 ray)
 {
     
-    float sc = 999999999999999.0;
+    float sc = 9999.0;
 
     if(scene.length() == 1) return getDist(ray, scene[0]);
 
@@ -192,7 +217,7 @@ void main() {
         //     current_raydir = reflect(current_raydir, normal(ray));
         //     float boost = min_dist*angleBetween(current_raydir, normal(ray))*(1+min_dist);
         //     dist+=(boost);
-        // //}    
+        // //}
         // } else if (dist > MAX_DIST) break;
         if (dist > MAX_DIST) break;
         
@@ -203,11 +228,16 @@ void main() {
     }
     
     //FragColor = vec4(gl_FragCoord.xy/Resolution.xy,1,1);
-    vec4 clr = vec4(normal(ray) / 2.0f + 0.5f, 1.0);
+    vec3 obj_color = (normal(ray) / 2.0f + 0.5f) * (max(dot(normal(ray), sun_dir), 0.0) + 0.3);
+    vec4 clr = vec4(obj_color + specular(Cam_pos, ray, -sun_dir, normal(ray), materials[0].roughness), 1.0);
     if(dist >= 0.001) {
         if(ray.y > 0) {
-
-            FragColor = vec4(0.06, 0.67, 0.69, 1.0);
+            if (dot(raydir, sun_dir) > 0.9) {
+                FragColor = vec4(1.0);
+            }
+            else {
+                FragColor = vec4(0.06, 0.67, 0.69, 1.0);
+            }
         } else{
             FragColor = vec4(0.06, 0.53, 0.0, 1.0);
         }
