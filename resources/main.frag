@@ -35,16 +35,19 @@ struct Object {
 
 
 const Material materials[] = {
-    Material(0, vec4(1,0,1,1), false)
+    Material(0, vec4(1,0,1,1), false),
+    Material(0.5, vec4(0,1,0,1), false),
+    Material(0, vec4(0,0.7,0,1), false)
 };
 
 const Object scene[] = {
-    Object(0, 0, vec3(0,8,0), vec4(1), 0), 
+    Object(0, 0, vec3(0,8,0), vec4(1), 1),
     Object(1, 0, vec3(0,6,0), vec4(1),0),
     //Object(5, 0, vec3(0), vec4(0), 0),
-    Object(6, 0, vec3(0, 5, 0), vec4(0), 0)
+    Object(6, 0, vec3(0, 5, 0), vec4(0), 2)
 };
 
+int nearest;
 // borrowed from https://www.shadertoy.com/view/33S3Rh
 float specular(vec3 camera_pos, vec3 point, vec3 lightDir, vec3 normal, float rougness) {
     float a_coeff_2 = dot(normalize(normalize(camera_pos-point)-lightDir), normal);
@@ -161,12 +164,25 @@ float sdfMap(vec3 ray)
     if(scene.length() == 1) return getDist(ray, scene[0]);
 
     for(int i = 1; i < scene.length(); i++) {
-        
+        float curr = getDist(ray, scene[i]);
         if(i==1) {
-            sc = min(getDist(ray, scene[i-1]), getDist(ray, scene[i]));
-        } else {
+            float last = getDist(ray, scene[i-1]);
 
-            sc = min(sc, getDist(ray, scene[i]));
+
+            if(last>curr) {
+                nearest = i;
+                sc = curr;
+            } else {
+                nearest = i-1;
+                sc = last;
+            }
+        } else {
+            
+
+            if(sc>curr) {
+                nearest = i;
+                sc = curr;
+            }
         }
 
     }
@@ -177,6 +193,8 @@ float sdfMap(vec3 ray)
     
     //return sphere(100, vec3(0,200,300), ray);
 }
+
+
 
 vec3 normal(vec3 point) {
     vec2 e = vec2(.0001, 0); // x smol, y none
@@ -245,8 +263,8 @@ void main() {
         coef = 0.0;
     }
 
-    vec3 obj_color = (normal(ray) / 2.0f + 0.5f)   * ((max(dot(normal(ray), sun_dir), 0.0)) * coef + 0.3);
-    vec4 clr = vec4(obj_color + specular(Cam_pos, ray, -sun_dir, normal(ray), materials[0].roughness), 1.0);
+    vec3 obj_color = (materials[scene[nearest].material_id].color.rgb)   * ((max(dot(normal(ray), sun_dir), 0.0)) * coef + 0.3);
+    vec4 clr = vec4(obj_color + specular(Cam_pos, ray, -sun_dir, normal(ray), materials[scene[nearest].material_id].roughness), 1.0);
     if(dist >= 0.001) {
         if(ray.y > 0) {
             if (dot(raydir, sun_dir) > 0.99) {
