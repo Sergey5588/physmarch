@@ -8,7 +8,9 @@ Also, check website for our project: [physmarch.com](https://physmarch.com)!
 ![Demo1](https://github.com/Sergey5588/physmarch/blob/master/demos/demo1.gif)
 
 ## Compile from source
-> :warning: Note: Only linux  X11 is supported! (wayland session as well as other operating systems are not tested. I'd be happy if you became a tester :wink: .)
+
+> [!WARNING]
+> Only linux  X11 is supported! (wayland session as well as other operating systems are not tested. I'd be happy if you became a tester :wink: .)
 
 First, install following dependencies with your package manager:
 
