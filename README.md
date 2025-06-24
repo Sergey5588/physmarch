@@ -48,7 +48,7 @@ make
 - [x] basic raymarching
 - [ ] operations between shapes
 - [ ] texturing
-- [ ] shading
+- [x] shading
 - [ ] game engine API
 - [ ] proper scene system
 - [ ] shape editor
