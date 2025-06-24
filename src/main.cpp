@@ -24,6 +24,18 @@
 #include<string>
 #define Up glm::vec3(0,-1,0)
 
+
+struct Object {
+    int type;
+    int operation;
+    glm::vec3 pos;
+    glm::vec4 args;
+    int material_id;
+};
+
+Object scene[] = {
+	Object{0,0, glm::vec3(0,0,0), glm::vec4(0), 0}
+};
 //extern bool MOUSE_LOCK;
 bool MOUSE_LOCK = true;
 float SPEED = 0.01f;
@@ -31,6 +43,7 @@ int WIDTH = 800;
 int HEIGHT = 800;
 
 int ITERATIONS = 256;
+int SHADOW_RAYS = 100;
 // Vertices coordinates
 GLfloat vertices[] =
 {
@@ -121,6 +134,8 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	if(MOUSE_LOCK) {
 
 		SPEED *= 1.0 + yoffset * 0.05;
+	} else {
+		ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
 	}
 }
 
@@ -218,8 +233,12 @@ int main()
 		
 		ImGui::Begin("Control panel");
 		ImGui::SliderInt("Iterations", &ITERATIONS, 0, 1000);
+		ImGui::SliderInt("Shadow rays", &SHADOW_RAYS, 0, 100);
 		ImGui::End();
 
+		ImGui::Begin("Scene editor");
+		ImGui::Text("Hello world!!");
+		ImGui::End();
 		
 		
 		
@@ -234,6 +253,7 @@ int main()
 		glUniform3f(glGetUniformLocation(shaderProgram.ID, "Orientation"), Orientation.x, Orientation.y, Orientation.z);
 		glUniform3f(glGetUniformLocation(shaderProgram.ID, "Cam_pos"), Position.x, Position.y, Position.z);
 		glUniform1i(glGetUniformLocation(shaderProgram.ID, "Iterations"), ITERATIONS);
+		glUniform1i(glGetUniformLocation(shaderProgram.ID, "Shadow_rays"), SHADOW_RAYS);
 		// Bind the VAO so OpenGL knows to use it
 		VAO1.Bind();
 		// Draw primitives, number of indices, datatype of indices, index of indices

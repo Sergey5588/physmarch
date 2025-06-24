@@ -3,6 +3,7 @@ uniform vec2 Resolution;
 uniform vec3 Orientation;
 uniform vec3 Cam_pos;
 uniform int Iterations = 256;
+uniform int Shadow_rays = 100;
 out vec4 FragColor;
 #define M_PI 3.1415926535897932384626433832795
 // types:
@@ -41,10 +42,10 @@ const Material materials[] = {
 };
 
 const Object scene[] = {
-    Object(0, 0, vec3(0,8,0), vec4(1), 1),
-    Object(1, 0, vec3(0,6,0), vec4(1),0),
+    Object(0, 0, vec3(0,2,0), vec4(1), 1),
+    Object(1, 0, vec3(0,0,0), vec4(1),0),
     //Object(5, 0, vec3(0), vec4(0), 0),
-    Object(6, 0, vec3(0, 5, 0), vec4(0), 2)
+    Object(6, 0, vec3(0, -1, 0), vec4(0), 2)
 };
 
 int nearest;
@@ -160,7 +161,6 @@ float sdfMap(vec3 ray)
 {
     
     float sc = 9999.0;
-
     if(scene.length() == 1) return getDist(ray, scene[0]);
 
     for(int i = 1; i < scene.length(); i++) {
@@ -234,6 +234,7 @@ void main() {
         //     
         // }
         
+        if (dist > MAX_DIST) break;
         dist = sdfMap(ray);
         
         // if (sphere(1, vec3(0,0,3),ray) <  box(vec3(2,2,2), vec3(0,0,-1), ray) && sphere(1, vec3(0,0,3),ray) < torus(vec3(0,4,0), vec2(2,1),ray) && dist < min_dist) {
@@ -243,7 +244,6 @@ void main() {
         //     dist+=(boost);
         // //}
         // } else if (dist > MAX_DIST) break;
-        if (dist > MAX_DIST) break;
         
         ray += current_raydir * dist;
         
@@ -251,7 +251,7 @@ void main() {
 
     vec3 shadow_ray = ray + sun_dir * 0.02;
     float shadow_dist = 0.1;
-    for (int i = 0; i < 100; i++) {
+    for (int i = 0; i < Shadow_rays; i++) {
         shadow_dist = sdfMap(shadow_ray);
         shadow_ray += shadow_dist * (sun_dir);
     }
