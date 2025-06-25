@@ -25,6 +25,18 @@
 #define Up glm::vec3(0,-1,0)
 
 
+enum ObjectType {
+	SPHERE,
+	BOX,
+	TRIANGULAR_PRISM,
+};
+
+enum OperationType {
+	BASE
+};
+
+
+
 struct Object {
     int type;
     int operation;
@@ -34,8 +46,14 @@ struct Object {
 };
 
 Object scene[] = {
-	Object{0,0, glm::vec3(0,0,0), glm::vec4(0), 0}
+	Object{SPHERE,BASE, glm::vec3(0,0,0), glm::vec4(0), 0},
+	Object{BOX, BASE, glm::vec3(0,1,0), glm::vec4(1), 0}
 };
+std::string labels[] = {
+	"Sphere",
+	"Box"
+};
+
 //extern bool MOUSE_LOCK;
 bool MOUSE_LOCK = true;
 float SPEED = 0.01f;
@@ -202,21 +220,21 @@ int main()
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
     
 
-    // Setup Platform/Renderer backends
-    ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
     ImGui_ImplOpenGL3_Init();
 	
 	
 	
 	// Main while loop
-
+	
 	
 	glfwSetCursorPos(window, WIDTH/2, HEIGHT/2);
 	glfwSwapInterval(1);
 	glfwSetKeyCallback(window, key_callback);
-
-	glfwSetScrollCallback(window, scroll_callback);
 	
+    ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
+	glfwSetScrollCallback(window, scroll_callback);
+	int selected = -1;
+    // Setup Platform/Renderer backends
 	while (!glfwWindowShouldClose(window))
 	{	
 		if(MOUSE_LOCK)
@@ -237,7 +255,25 @@ int main()
 		ImGui::End();
 
 		ImGui::Begin("Scene editor");
-		ImGui::Text("Hello world!!");
+		
+		for(int i = 0; i < sizeof(scene)/sizeof(scene[0]); i++) {
+			ImGuiTreeNodeFlags tree_flags = ImGuiTreeNodeFlags_None;
+			if(selected == i) tree_flags |= ImGuiTreeNodeFlags_Selected;
+			bool is_open = ImGui::TreeNodeEx(labels[scene[i].type].c_str(), tree_flags);
+
+			if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen()) {
+				selected = i;
+			}
+
+			if (is_open) {
+				ImGui::BulletText("Props:");
+				ImGui::DragFloat3("Position", glm::value_ptr(scene[i].pos), 0.1f);
+				ImGui::DragFloat4("Arguments", glm::value_ptr(scene[i].args), 0.1f);
+				ImGui::TreePop();
+			}
+		}
+
+
 		ImGui::End();
 		
 		

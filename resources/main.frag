@@ -159,8 +159,11 @@ float getDist(vec3 ray, Object obj) {
 
 float sdfMap(vec3 ray)
 {
-    
-    float sc = 9999.0;
+    //this is faster
+    float sc = min(sphere(vec3(0,0,0), ray, 1), box(vec3(0,2,0), ray, vec3(1,1,1)));
+    sc = min(sc, ray.y +1);
+    return sc;
+    // than this :(
     if(scene.length() == 1) return getDist(ray, scene[0]);
 
     for(int i = 1; i < scene.length(); i++) {
