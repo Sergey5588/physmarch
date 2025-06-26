@@ -48,7 +48,7 @@ const Object scene[] = {
     Object(6, 0, vec3(0, -1, 0), vec4(0), 2)
 };
 
-int nearest;
+int nearest = -1;
 // borrowed from https://www.shadertoy.com/view/33S3Rh
 float specular(vec3 camera_pos, vec3 point, vec3 lightDir, vec3 normal, float rougness) {
     float a_coeff_2 = dot(normalize(normalize(camera_pos-point)-lightDir), normal);
@@ -140,13 +140,12 @@ float angleBetween(vec3 A, vec3 B) {
 }
 
 float getDist(vec3 ray, Object obj) {
+    
     switch (obj.type) {
         case 0:
             return sphere(obj.pos, ray, obj.args.x);
         case 1:
             return box(obj.pos, ray, obj.args.xyz);
-        case 5:
-            return bulb(ray);
         case 6:
             return ray.y - obj.pos.y;
     
@@ -159,10 +158,11 @@ float getDist(vec3 ray, Object obj) {
 
 float sdfMap(vec3 ray)
 {
+    float sc = 0;
     //this is faster
-    float sc = min(sphere(vec3(0,0,0), ray, 1), box(vec3(0,2,0), ray, vec3(1,1,1)));
-    sc = min(sc, ray.y +1);
-    return sc;
+    // sc = min(sphere(vec3(0,0,0), ray, 1), box(vec3(0,2,0), ray, vec3(1,1,1)));
+    // sc = min(sc, ray.y +1);
+    // return sc;
     // than this :(
     if(scene.length() == 1) return getDist(ray, scene[0]);
 
@@ -213,6 +213,7 @@ vec3 normal(vec3 point) {
 
 
 void main() {
+    
     vec3 up = vec3(0.0, 1.0, 0.0);
     vec3 right = normalize(cross(up, Orientation));
     vec3 localUp = normalize(cross(-right, Orientation));
