@@ -4,6 +4,9 @@ uniform vec3 Orientation;
 uniform vec3 Cam_pos;
 uniform int Iterations = 256;
 uniform int Shadow_rays = 100;
+uniform vec3 Positions[] = {vec3(0,2,0), vec3(0,0,0), vec3(0, -1, 0)};
+
+
 out vec4 FragColor;
 #define M_PI 3.1415926535897932384626433832795
 // types:
@@ -41,7 +44,7 @@ const Material materials[] = {
     Material(0, vec4(0,0.7,0,1), false)
 };
 
-const Object scene[] = {
+Object scene[] = {
     Object(0, 0, vec3(0,2,0), vec4(1), 1),
     Object(1, 0, vec3(0,0,0), vec4(1),0),
     //Object(5, 0, vec3(0), vec4(0), 0),
@@ -214,6 +217,13 @@ vec3 normal(vec3 point) {
 
 void main() {
     
+    //just for tests
+
+    scene[0].pos = Positions[0];
+    scene[1].pos = Positions[1];
+    scene[2].pos = Positions[2];
+
+
     vec3 up = vec3(0.0, 1.0, 0.0);
     vec3 right = normalize(cross(up, Orientation));
     vec3 localUp = normalize(cross(-right, Orientation));
