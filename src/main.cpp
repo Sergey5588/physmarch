@@ -277,7 +277,13 @@ int main()
 		ImGui::End();
 		
 		
+		const int SIZE = 3;
 		
+
+		glm::vec3 poss[SIZE];
+		for (int i = 0; i < SIZE; ++i) {
+			poss[i] = scene[i].pos;
+		}
 		// Spec
 		// ify the color of the background
 		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
@@ -290,6 +296,7 @@ int main()
 		glUniform3f(glGetUniformLocation(shaderProgram.ID, "Cam_pos"), Position.x, Position.y, Position.z);
 		glUniform1i(glGetUniformLocation(shaderProgram.ID, "Iterations"), ITERATIONS);
 		glUniform1i(glGetUniformLocation(shaderProgram.ID, "Shadow_rays"), SHADOW_RAYS);
+		glUniform3fv(glGetUniformLocation(shaderProgram.ID, "Positions"), 3, glm::value_ptr(poss[0]));
 		// Bind the VAO so OpenGL knows to use it
 		VAO1.Bind();
 		// Draw primitives, number of indices, datatype of indices, index of indices
