@@ -46,7 +46,7 @@ struct Object {
 };
 
 Object scene[] = {
-	Object{SPHERE,BASE, glm::vec3(0,0,0), glm::vec4(0), 0},
+	Object{SPHERE,BASE, glm::vec3(0,3,0), glm::vec4(0), 0},
 	Object{BOX, BASE, glm::vec3(0,1,0), glm::vec4(1), 0}
 };
 std::string labels[] = {
@@ -161,7 +161,7 @@ int main()
 {
 	
 	glm::vec3 Orientation = glm::vec3(0,0,1);
-	glm::vec3 Position = glm::vec3(0,0,0);
+	glm::vec3 Position = glm::vec3(0,1,-3);
 	// Initialize GLFW
 	glfwInit();
 	// Tell GLFW what version of OpenGL we are using 
