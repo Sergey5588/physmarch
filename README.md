@@ -45,6 +45,7 @@ make
 ## Default controls
 - WASD - move
 - Q and E - up and down respectively
+- Mouse wheel - change speed of the camera
 ## To do
 - [x] basic raymarching
 - [ ] operations between shapes
