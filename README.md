@@ -7,6 +7,7 @@ Also, check website for our project: [physmarch.com](https://physmarch.com)! (MA
 
 ## Gallery
 ![Demo1](https://github.com/Sergey5588/physmarch/blob/master/demos/demo1.gif)
+[Second demo (youtube)](https://youtu.be/ahUss3JYl2I)
 
 ## Compile from source
 
