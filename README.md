@@ -46,6 +46,7 @@ make
 - WASD - move
 - Q and E - up and down respectively
 - Mouse wheel - change speed of the camera
+- Esc - lock / unlock cursor
 ## To do
 - [x] basic raymarching
 - [ ] operations between shapes
