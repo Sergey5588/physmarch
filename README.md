@@ -14,7 +14,7 @@ Also, check website for our project: [physmarch.com](https://physmarch.com)! (MA
 > [!WARNING]
 > Only linux X11 (Xwayland also works) is supported! (wayland session as well as other operating systems are not tested. I'd be happy if you became a tester :wink: .)
 
-First, install following dependencies with your package manager:
+First, install following dependencies with your package manager (or run ```nix-shell``` if you're on NixOS):
 
 ```opengl cmake glfw```
 
