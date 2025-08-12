@@ -1,4 +1,4 @@
-#version 460 core
+#version 450 core
 uniform vec2 Resolution;
 uniform vec3 Orientation;
 uniform vec3 Cam_pos;
