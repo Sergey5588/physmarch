@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10.0)
 project(ray_marching VERSION 0.1.0)
 cmake_policy(SET CMP0072 NEW)
 find_package(OpenGL REQUIRED)
-
+find_package(glfw3 REQUIRED)
 include_directories(include include/imgui)
 
 
@@ -22,6 +22,8 @@ add_executable(ray_marching
 )
 target_link_libraries(ray_marching 
     glfw
+    
+    
     OpenGL::GL
 )
 
