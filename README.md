@@ -16,7 +16,9 @@ Also, check website for our project: [physmarch.com](https://physmarch.com)! (MA
 
 First, install following dependencies with your package manager (or run ```nix-shell``` in cloned repo if you're on NixOS):
 
-```opengl cmake glfw```
+```opengl cmake```
+
+you will also need a [static glfw build](https://www.glfw.org/docs/latest/compile.html) (to be changed in the future).
 
 then run this command:
 
