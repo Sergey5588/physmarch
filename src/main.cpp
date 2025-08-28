@@ -26,13 +26,16 @@
 
 
 enum ObjectType {
-	SPHERE,
-	BOX,
-	TRIANGULAR_PRISM,
+	T_SPHERE,
+	T_BOX,
+	T_PRISM,
+	T_TORUS,
+	T_PLANE,
+	T_BULB
 };
 
 enum OperationType {
-	BASE
+	O_BASE
 };
 
 
@@ -46,12 +49,20 @@ struct Object {
 };
 
 Object scene[] = {
-	Object{SPHERE,BASE, glm::vec3(0,3,0), glm::vec4(0), 0},
-	Object{BOX, BASE, glm::vec3(0,1,0), glm::vec4(1), 0}
+	Object{T_SPHERE, O_BASE, glm::vec3(0,3,0), glm::vec4(0), 0},
+	Object{T_BOX, O_BASE, glm::vec3(0,1,0), glm::vec4(1), 0},
+	Object{T_PRISM, O_BASE, glm::vec3(1, 0, 0), glm::vec4(1, 1, 0, 0), 2},
+    Object{T_TORUS, O_BASE, glm::vec3(0, 0, 1), glm::vec4(0.5, 1, 0, 0), 2},
+    Object{T_PLANE, O_BASE, glm::vec3(0, -1, 0), glm::vec4(0, 1, 0, 0), 2},
+    Object{T_BULB, O_BASE, glm::vec3(0), glm::vec4(0), 1}
 };
 std::string labels[] = {
 	"Sphere",
-	"Box"
+	"Box",
+	"Prism",
+	"Torus",
+	"Plane",
+	"Bulb"
 };
 
 //extern bool MOUSE_LOCK;
@@ -252,6 +263,7 @@ int main()
 		ImGui::Begin("Control panel");
 		ImGui::SliderInt("Iterations", &ITERATIONS, 0, 1000);
 		ImGui::SliderInt("Shadow rays", &SHADOW_RAYS, 0, 100);
+		ImGui::DragFloat3("Camera position", glm::value_ptr(Position), 0, 0.01);
 		ImGui::End();
 
 		ImGui::Begin("Scene editor");
@@ -277,12 +289,14 @@ int main()
 		ImGui::End();
 		
 		
-		const int SIZE = 3;
+		const int SIZE = sizeof(scene)/sizeof(scene[0]);
 		
 
 		glm::vec3 poss[SIZE];
+		glm::vec4 args[SIZE];
 		for (int i = 0; i < SIZE; ++i) {
 			poss[i] = scene[i].pos;
+			args[i] = scene[i].args;
 		}
 		// Spec
 		// ify the color of the background
@@ -296,7 +310,8 @@ int main()
 		glUniform3f(glGetUniformLocation(shaderProgram.ID, "Cam_pos"), Position.x, Position.y, Position.z);
 		glUniform1i(glGetUniformLocation(shaderProgram.ID, "Iterations"), ITERATIONS);
 		glUniform1i(glGetUniformLocation(shaderProgram.ID, "Shadow_rays"), SHADOW_RAYS);
-		glUniform3fv(glGetUniformLocation(shaderProgram.ID, "Positions"), 3, glm::value_ptr(poss[0]));
+		glUniform3fv(glGetUniformLocation(shaderProgram.ID, "Positions"), 6, glm::value_ptr(poss[0]));
+		glUniform4fv(glGetUniformLocation(shaderProgram.ID, "Arguments"), 6, glm::value_ptr(args[0]));
 		// Bind the VAO so OpenGL knows to use it
 		VAO1.Bind();
 		// Draw primitives, number of indices, datatype of indices, index of indices
