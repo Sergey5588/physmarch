@@ -9,17 +9,21 @@ uniform vec3 Positions[] = {vec3(0,2,0), vec3(0,0,0), vec3(0, -1, 0)};
 
 out vec4 FragColor;
 #define M_PI 3.1415926535897932384626433832795
-// types:
-// 0 - sphere
-// 1 - box
-// 2 - prism
-// 3 - etc
 
-// operations
-// 0 - base
+#define T_SPHERE 0
+#define T_BOX 1
+#define T_PRISM 2
+#define T_TORUS 3
+#define T_PLANE 4
+#define T_BULB 5
+
+#define O_BASE 0
+
+
+
 
 const float MAX_DIST = 10000;
-const float min_dist = 0.00001;
+const float MIN_DIST = 0.00001;
 
 vec3 sun_dir = normalize(vec3(1, 2, 3));
 
@@ -45,13 +49,13 @@ const Material materials[] = {
 };
 
 Object scene[] = {
-    Object(0, 0, vec3(0,2,0), vec4(1), 1),
-    Object(1, 0, vec3(0,0,0), vec4(1),0),
+    Object(T_SPHERE, 0, vec3(0,2,0), vec4(1), 1),
+    Object(T_BOX, 0, vec3(0,0,0), vec4(1),0),
     //Object(5, 0, vec3(0), vec4(0), 0),
-    Object(6, 0, vec3(0, -1, 0), vec4(0), 2)
+    Object(T_PLANE, 0, vec3(0, -1, 0), vec4(0, 1, 0, 0), 2)
 };
 
-int nearest = -1;
+int lengths[6];
 // borrowed from https://www.shadertoy.com/view/33S3Rh
 float specular(vec3 camera_pos, vec3 point, vec3 lightDir, vec3 normal, float rougness) {
     float a_coeff_2 = dot(normalize(normalize(camera_pos-point)-lightDir), normal);
@@ -81,7 +85,7 @@ float TriPrism( vec3 pos, vec3 ray, vec2 h)
     return max(q.z-h.y,max(q.x*0.866025+p.y*0.5,-p.y)-h.x*0.5);
 }
 
-float torus(  vec3 pos, vec3 ray, vec2 t )
+float torus(vec3 pos, vec3 ray, vec2 t )
 {
     vec3 p = ray - pos;
     vec2 q = vec2(length(p.xz)-t.x,p.y);
@@ -89,9 +93,9 @@ float torus(  vec3 pos, vec3 ray, vec2 t )
 }
 
 
-float plane(vec3 ray, vec4 N){
+float plane(vec3 pos, vec3 ray, vec4 N){
     
-    return dot(ray,N.xyz) + N.w;
+    return dot(ray - pos,N.xyz) + N.w;
 }
 
 float bulb(vec3 p )
@@ -142,64 +146,98 @@ float angleBetween(vec3 A, vec3 B) {
     return cosTheta; // cos
 }
 
-float getDist(vec3 ray, Object obj) {
-    
-    switch (obj.type) {
-        case 0:
-            return sphere(obj.pos, ray, obj.args.x);
-        case 1:
-            return box(obj.pos, ray, obj.args.xyz);
-        case 6:
-            return ray.y - obj.pos.y;
-    
-    }
-    
-    
-    
-    return 0.0;
-}
 
+//with max-ts help
 float sdfMap(vec3 ray)
 {
-    float sc = 0;
-    //this is faster
-    // sc = min(sphere(vec3(0,0,0), ray, 1), box(vec3(0,2,0), ray, vec3(1,1,1)));
-    // sc = min(sc, ray.y +1);
-    // return sc;
-    // than this :(
-    if(scene.length() == 1) return getDist(ray, scene[0]);
 
-    for(int i = 1; i < scene.length(); i++) {
-        float curr = getDist(ray, scene[i]);
-        if(i==1) {
-            float last = getDist(ray, scene[i-1]);
+    
+    int object_id = 0;
+    float min_dist = MAX_DIST+1;
 
-
-            if(last>curr) {
-                nearest = i;
-                sc = curr;
-            } else {
-                nearest = i-1;
-                sc = last;
-            }
-        } else {
-            
-
-            if(sc>curr) {
-                nearest = i;
-                sc = curr;
-            }
-        }
-
+    
+    for (int left = lengths[T_SPHERE]; left > 0; object_id++)
+    {
+        min_dist = min(min_dist, sphere(scene[object_id].pos, ray, scene[object_id].args.x));   
+        left--;
     }
-    // float sc = min(sphere(1, vec3(0,0,3),ray),box(vec3(2,2,2), vec3(0,0,-1), ray));
-    // sc = min(sc, TriPrism(vec3(0,5,0),vec2(1,1), ray));
-    
-    return sc;
-    
-    //return sphere(100, vec3(0,200,300), ray);
-}
+    for (int left = lengths[T_BOX]; left > 0; object_id++)
+    {
+        min_dist = min(min_dist, box(scene[object_id].pos, ray, scene[object_id].args.xyz));
+        left--;
+    }
+    for (int left = lengths[T_PRISM]; left > 0; object_id++)
+    {
+        min_dist = min(min_dist, TriPrism(scene[object_id].pos, ray, scene[object_id].args.xy));   
+        left--;
+    }
+    for (int left = lengths[T_TORUS]; left > 0; object_id++)
+    {
+        min_dist = min(min_dist, torus(scene[object_id].pos, ray, scene[object_id].args.xy));   
+        left--;
+    }
+    for (int left = lengths[T_PLANE]; left > 0; object_id++)
+    {
+        min_dist = min(min_dist, plane(scene[object_id].pos, ray, scene[object_id].args));   
+        left--;
+    }
 
+    return min_dist;
+}
+//with max-ts help
+int getMaterial(vec3 ray) {
+    
+    float min_dist = MAX_DIST + 1;
+    int object_id = 0;
+    int material = 0;
+
+    for (int left = lengths[T_SPHERE]; left > 0; object_id++)
+    {
+        float dist = sphere(scene[object_id].pos, ray, scene[object_id].args.x);
+        if (min_dist > dist)     {
+            min_dist = dist;
+            material = scene[object_id].material_id;
+        }   
+        left--;
+    }
+    for (int left = lengths[T_BOX]; left > 0; object_id++)
+    {
+        float dist = box(scene[object_id].pos, ray, scene[object_id].args.xyz);
+        if (min_dist > dist) {
+            min_dist = dist;
+            material = scene[object_id].material_id;
+        }
+        left--;
+    }
+    for (int left = lengths[T_PRISM]; left > 0; object_id++)
+    {
+        float dist = TriPrism(scene[object_id].pos, ray, scene[object_id].args.xy);
+        if (min_dist > dist) {
+            min_dist = dist;
+            material = scene[object_id].material_id;
+        }
+        left--;
+    }
+    for (int left = lengths[T_TORUS]; left > 0; object_id++)
+    {
+        float dist = torus(scene[object_id].pos, ray, scene[object_id].args.xy);
+        if (min_dist > dist) {
+            min_dist = dist;
+            material = scene[object_id].material_id;
+        }
+        left--;
+    }
+    for (int left = lengths[T_PLANE]; left > 0; object_id++)
+    {
+        float dist = plane(scene[object_id].pos, ray, scene[object_id].args);
+        if (min_dist > dist) {
+            min_dist = dist;
+            material = scene[object_id].material_id;
+        }
+        left--;
+    }
+    return material;
+}
 
 
 vec3 normal(vec3 point) {
@@ -223,6 +261,12 @@ void main() {
     scene[1].pos = Positions[1];
     scene[2].pos = Positions[2];
 
+    lengths[T_SPHERE] = 1;
+    lengths[T_BOX] = 1;
+    lengths[T_PRISM] = 0;
+    lengths[T_TORUS] = 0;
+    lengths[T_PLANE] = 1;
+    lengths[T_BULB] = 0;
 
     vec3 up = vec3(0.0, 1.0, 0.0);
     vec3 right = normalize(cross(up, Orientation));
@@ -276,9 +320,10 @@ void main() {
     if(length(shadow_ray - ray) < 99.0) {
         coef = 0.0;
     }
+    int material = getMaterial(ray);
 
-    vec3 obj_color = (materials[scene[nearest].material_id].color.rgb)   * ((max(dot(normal(ray), sun_dir), 0.0)) * coef + 0.3);
-    vec4 clr = vec4(obj_color + specular(Cam_pos, ray, -sun_dir, normal(ray), materials[scene[nearest].material_id].roughness), 1.0);
+    vec3 obj_color = (materials[material].color.rgb)   * ((max(dot(normal(ray), sun_dir), 0.0)) * coef + 0.3);
+    vec4 clr = vec4(obj_color + specular(Cam_pos, ray, -sun_dir, normal(ray), materials[material].roughness), 1.0);
     if(dist >= 0.001) {
         if(ray.y > 0) {
             if (dot(raydir, sun_dir) > 0.99) {
