@@ -4,8 +4,8 @@ uniform vec3 Orientation;
 uniform vec3 Cam_pos;
 uniform int Iterations = 256;
 uniform int Shadow_rays = 100;
-uniform vec3 Positions[] = {vec3(0,2,0), vec3(0,0,0), vec3(0, -1, 0)};
-
+uniform vec3 Positions[]= {vec3(0,2,0), vec3(0,0,0), vec3(0, -1, 0), vec3(0,2,0), vec3(0,0,0), vec3(0, -1, 0)};
+uniform vec4 Arguments[]= {vec4(1),vec4(1),vec4(1, 1, 0, 0), vec4(1),vec4(0, 1, 0, 0),vec4(1, 1, 0, 0)};
 
 out vec4 FragColor;
 #define M_PI 3.1415926535897932384626433832795
@@ -19,10 +19,24 @@ out vec4 FragColor;
 
 #define O_BASE 0
 
+#define PROCESS_OBJECT_TYPE(type, func) \
+    for (int left = lengths[type]; left > 0; object_id++) {\
+        min_dist = min(min_dist, func(scene[object_id].pos, ray, scene[object_id].args));\
+        left--;\
+    }
+
+#define PROCESS_MATERIAL_ID(type, func) \
+    for (int left = lengths[type]; left > 0; object_id++) {\
+        float dist = func(scene[object_id].pos, ray, scene[object_id].args);\
+        if (min_dist > dist) {\
+            min_dist = dist;\
+            material = scene[object_id].material_id;\
+        }\
+        left--;\
+    }
 
 
-
-const float MAX_DIST = 10000;
+const float MAX_DIST = 3e38;
 const float MIN_DIST = 0.00001;
 
 vec3 sun_dir = normalize(vec3(1, 2, 3));
@@ -49,10 +63,12 @@ const Material materials[] = {
 };
 
 Object scene[] = {
-    Object(T_SPHERE, 0, vec3(0,2,0), vec4(1), 1),
-    Object(T_BOX, 0, vec3(0,0,0), vec4(1),0),
-    //Object(5, 0, vec3(0), vec4(0), 0),
-    Object(T_PLANE, 0, vec3(0, -1, 0), vec4(0, 1, 0, 0), 2)
+    Object(T_SPHERE, O_BASE, vec3(0,2,0), vec4(1), 1),
+    Object(T_BOX, O_BASE, vec3(0,0,0), vec4(1),0),
+    Object(T_PRISM, O_BASE, vec3(1, 0, 0), vec4(1, 1, 0, 0), 1),
+    Object(T_TORUS, O_BASE, vec3(0, 0, 1), vec4(0.5, 1, 0, 0), 1),
+    Object(T_PLANE, O_BASE, vec3(0, -1, 0), vec4(0, 1, 0, 0), 2),
+    Object(T_BULB, O_BASE, vec3(0), vec4(0), 1),
 };
 
 int lengths[6];
@@ -66,26 +82,26 @@ float specular(vec3 camera_pos, vec3 point, vec3 lightDir, vec3 normal, float ro
     return specular;
 }
 
-float sphere(vec3 pos, vec3 ray, float radius) {
-    return length(pos-ray)-radius;
+float sphere(vec3 pos, vec3 ray, vec4 args) {
+    return length(pos-ray)-args.x;
 }
 
-float box(vec3 pos, vec3 ray, vec3 sizes) {
+float box(vec3 pos, vec3 ray, vec4 args) {
     
-    vec3 q = abs(pos - ray) - sizes;
+    vec3 q = abs(pos - ray) - args.xyz;
     return length(max(q,0.0)) + min(max(q.x,max(q.y,q.z)),0.0);
     
 
 }
 
-float TriPrism( vec3 pos, vec3 ray, vec2 h)
+float TriPrism( vec3 pos, vec3 ray, vec4 h)
 {
     vec3 p = ray - pos;
     vec3 q = abs(p);
     return max(q.z-h.y,max(q.x*0.866025+p.y*0.5,-p.y)-h.x*0.5);
 }
 
-float torus(vec3 pos, vec3 ray, vec2 t )
+float torus(vec3 pos, vec3 ray, vec4 t)
 {
     vec3 p = ray - pos;
     vec2 q = vec2(length(p.xz)-t.x,p.y);
@@ -98,10 +114,10 @@ float plane(vec3 pos, vec3 ray, vec4 N){
     return dot(ray - pos,N.xyz) + N.w;
 }
 
-float bulb(vec3 p )
+float bulb(vec3 pos, vec3 ray, vec4 args)
 {
     //p = p/20.0;
-    vec3 w = p;
+    vec3 w = ray - pos;
     float m = dot(w,w);
 
     vec4 trap = vec4(abs(w),m);
@@ -118,7 +134,7 @@ float bulb(vec3 p )
         float r = length(w);
         float b = 8.0*acos( w.y/r);
         float a = 8.0*atan( w.x, w.z );
-        w = p + pow(r,8.0) * vec3( sin(b)*sin(a), cos(b), sin(b)*cos(a) );
+        w = w + pow(r,8.0) * vec3( sin(b)*sin(a), cos(b), sin(b)*cos(a) );
         
       
         trap = min( trap, vec4(abs(w),m) );
@@ -155,33 +171,12 @@ float sdfMap(vec3 ray)
     int object_id = 0;
     float min_dist = MAX_DIST+1;
 
-    
-    for (int left = lengths[T_SPHERE]; left > 0; object_id++)
-    {
-        min_dist = min(min_dist, sphere(scene[object_id].pos, ray, scene[object_id].args.x));   
-        left--;
-    }
-    for (int left = lengths[T_BOX]; left > 0; object_id++)
-    {
-        min_dist = min(min_dist, box(scene[object_id].pos, ray, scene[object_id].args.xyz));
-        left--;
-    }
-    for (int left = lengths[T_PRISM]; left > 0; object_id++)
-    {
-        min_dist = min(min_dist, TriPrism(scene[object_id].pos, ray, scene[object_id].args.xy));   
-        left--;
-    }
-    for (int left = lengths[T_TORUS]; left > 0; object_id++)
-    {
-        min_dist = min(min_dist, torus(scene[object_id].pos, ray, scene[object_id].args.xy));   
-        left--;
-    }
-    for (int left = lengths[T_PLANE]; left > 0; object_id++)
-    {
-        min_dist = min(min_dist, plane(scene[object_id].pos, ray, scene[object_id].args));   
-        left--;
-    }
-
+    PROCESS_OBJECT_TYPE(T_SPHERE, sphere)
+    PROCESS_OBJECT_TYPE(T_BOX, box)
+    PROCESS_OBJECT_TYPE(T_PRISM, TriPrism)
+    PROCESS_OBJECT_TYPE(T_TORUS, torus)
+    PROCESS_OBJECT_TYPE(T_PLANE, plane)
+    PROCESS_OBJECT_TYPE(T_BULB, bulb)
     return min_dist;
 }
 //with max-ts help
@@ -191,51 +186,12 @@ int getMaterial(vec3 ray) {
     int object_id = 0;
     int material = 0;
 
-    for (int left = lengths[T_SPHERE]; left > 0; object_id++)
-    {
-        float dist = sphere(scene[object_id].pos, ray, scene[object_id].args.x);
-        if (min_dist > dist)     {
-            min_dist = dist;
-            material = scene[object_id].material_id;
-        }   
-        left--;
-    }
-    for (int left = lengths[T_BOX]; left > 0; object_id++)
-    {
-        float dist = box(scene[object_id].pos, ray, scene[object_id].args.xyz);
-        if (min_dist > dist) {
-            min_dist = dist;
-            material = scene[object_id].material_id;
-        }
-        left--;
-    }
-    for (int left = lengths[T_PRISM]; left > 0; object_id++)
-    {
-        float dist = TriPrism(scene[object_id].pos, ray, scene[object_id].args.xy);
-        if (min_dist > dist) {
-            min_dist = dist;
-            material = scene[object_id].material_id;
-        }
-        left--;
-    }
-    for (int left = lengths[T_TORUS]; left > 0; object_id++)
-    {
-        float dist = torus(scene[object_id].pos, ray, scene[object_id].args.xy);
-        if (min_dist > dist) {
-            min_dist = dist;
-            material = scene[object_id].material_id;
-        }
-        left--;
-    }
-    for (int left = lengths[T_PLANE]; left > 0; object_id++)
-    {
-        float dist = plane(scene[object_id].pos, ray, scene[object_id].args);
-        if (min_dist > dist) {
-            min_dist = dist;
-            material = scene[object_id].material_id;
-        }
-        left--;
-    }
+    PROCESS_MATERIAL_ID(T_SPHERE, sphere)
+    PROCESS_MATERIAL_ID(T_BOX, box)
+    PROCESS_MATERIAL_ID(T_PRISM, TriPrism)
+    PROCESS_MATERIAL_ID(T_TORUS, torus)
+    PROCESS_MATERIAL_ID(T_PLANE, plane)
+    PROCESS_MATERIAL_ID(T_BULB, bulb)
     return material;
 }
 
@@ -255,18 +211,19 @@ vec3 normal(vec3 point) {
 
 void main() {
     
-    //just for tests
-
-    scene[0].pos = Positions[0];
-    scene[1].pos = Positions[1];
-    scene[2].pos = Positions[2];
+    
+    for(int i = 0; i< 6; i++) {
+        
+        scene[i].pos = Positions[i];
+        scene[i].args = Arguments[i];
+    }
 
     lengths[T_SPHERE] = 1;
     lengths[T_BOX] = 1;
-    lengths[T_PRISM] = 0;
-    lengths[T_TORUS] = 0;
+    lengths[T_PRISM] = 1;
+    lengths[T_TORUS] = 1;
     lengths[T_PLANE] = 1;
-    lengths[T_BULB] = 0;
+    lengths[T_BULB] = 1;
 
     vec3 up = vec3(0.0, 1.0, 0.0);
     vec3 right = normalize(cross(up, Orientation));
