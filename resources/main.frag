@@ -55,6 +55,11 @@ struct Object {
     int material_id;
 };
 
+const int UBO_SIZE = 1024;
+
+layout (std140, binding = 0) uniform UBO {
+   Object scene[UBO_SIZE];
+};
 
 const Material materials[] = {
     Material(0, vec4(1,0,1,1), false),
@@ -62,14 +67,14 @@ const Material materials[] = {
     Material(0, vec4(0,0.7,0,1), false)
 };
 
-Object scene[] = {
-    Object(T_SPHERE, O_BASE, vec3(0,2,0), vec4(1), 1),
-    Object(T_BOX, O_BASE, vec3(0,0,0), vec4(1),0),
-    Object(T_PRISM, O_BASE, vec3(1, 0, 0), vec4(1, 1, 0, 0), 1),
-    Object(T_TORUS, O_BASE, vec3(0, 0, 1), vec4(0.5, 1, 0, 0), 1),
-    Object(T_PLANE, O_BASE, vec3(0, -1, 0), vec4(0, 1, 0, 0), 2),
-    Object(T_BULB, O_BASE, vec3(0), vec4(0), 1),
-};
+// Object scene[] = {
+//     Object(T_SPHERE, O_BASE, vec3(0,2,0), vec4(1), 1),
+//     Object(T_BOX, O_BASE, vec3(0,0,0), vec4(1),0),
+//     Object(T_PRISM, O_BASE, vec3(1, 0, 0), vec4(1, 1, 0, 0), 1),
+//     Object(T_TORUS, O_BASE, vec3(0, 0, 1), vec4(0.5, 1, 0, 0), 1),
+//     Object(T_PLANE, O_BASE, vec3(0, -1, 0), vec4(0, 1, 0, 0), 2),
+//     Object(T_BULB, O_BASE, vec3(0), vec4(0), 1),
+// };
 
 int lengths[6];
 // borrowed from https://www.shadertoy.com/view/33S3Rh
@@ -212,11 +217,11 @@ vec3 normal(vec3 point) {
 void main() {
     
     
-    for(int i = 0; i< 6; i++) {
+    // for(int i = 0; i< 6; i++) {
         
-        scene[i].pos = Positions[i];
-        scene[i].args = Arguments[i];
-    }
+    //     scene[i].pos = Positions[i];
+    //     scene[i].args = Arguments[i];
+    // }
 
     lengths[T_SPHERE] = 1;
     lengths[T_BOX] = 1;
@@ -224,6 +229,7 @@ void main() {
     lengths[T_TORUS] = 1;
     lengths[T_PLANE] = 1;
     lengths[T_BULB] = 1;
+    
 
     vec3 up = vec3(0.0, 1.0, 0.0);
     vec3 right = normalize(cross(up, Orientation));
