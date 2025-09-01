@@ -8,7 +8,7 @@
 #include<glm/gtx/transform.hpp>
 #include<glm/gtx/vector_angle.hpp>
 #include<glm/gtc/type_ptr.hpp>
-
+#include<vector>
 
 #include<imgui.h>
 #include<imgui_impl_glfw.h>
@@ -20,35 +20,14 @@
 #include"VAO.h"
 #include"VBO.h"
 #include"EBO.h"
-
+#include"UBO.h"
 #include<string>
 #define Up glm::vec3(0,-1,0)
 
-
-enum ObjectType {
-	T_SPHERE,
-	T_BOX,
-	T_PRISM,
-	T_TORUS,
-	T_PLANE,
-	T_BULB
-};
-
-enum OperationType {
-	O_BASE
-};
+#include"object.h"
 
 
-
-struct Object {
-    int type;
-    int operation;
-    glm::vec3 pos;
-    glm::vec4 args;
-    int material_id;
-};
-
-Object scene[] = {
+std::vector<Object> scene = {
 	Object{T_SPHERE, O_BASE, glm::vec3(0,3,0), glm::vec4(0), 0},
 	Object{T_BOX, O_BASE, glm::vec3(0,1,0), glm::vec4(1), 0},
 	Object{T_PRISM, O_BASE, glm::vec3(1, 0, 0), glm::vec4(1, 1, 0, 0), 2},
@@ -56,7 +35,7 @@ Object scene[] = {
     Object{T_PLANE, O_BASE, glm::vec3(0, -1, 0), glm::vec4(0, 1, 0, 0), 2},
     Object{T_BULB, O_BASE, glm::vec3(0), glm::vec4(0), 1}
 };
-std::string labels[] = {
+std::vector<std::string> labels = {
 	"Sphere",
 	"Box",
 	"Prism",
@@ -170,7 +149,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 int main()
 {
-	
+
 	glm::vec3 Orientation = glm::vec3(0,0,1);
 	glm::vec3 Position = glm::vec3(0,1,-3);
 	// Initialize GLFW
@@ -206,7 +185,9 @@ int main()
 	// Generates Shader object using shaders defualt.vert and default.frag
 	Shader shaderProgram("./resources/main.vert", "./resources/main.frag");
 
-
+	// UBO UBO1(object_size,1024);
+	// UBO1.Bind();
+	// UBO1.BindBase(shaderProgram.ID, 0);
 	// Generates Vertex Array Object and binds it
 	VAO VAO1;
 	VAO1.Bind();
@@ -222,6 +203,7 @@ int main()
 	VAO1.Unbind();
 	VBO1.Unbind();
 	EBO1.Unbind();
+	// UBO1.UnBind();
 	shaderProgram.Activate();
 	
 	IMGUI_CHECKVERSION();
@@ -268,7 +250,7 @@ int main()
 
 		ImGui::Begin("Scene editor");
 		
-		for(int i = 0; i < sizeof(scene)/sizeof(scene[0]); i++) {
+		for(int i = 0; i < scene.size(); i++) {
 			ImGuiTreeNodeFlags tree_flags = ImGuiTreeNodeFlags_None;
 			if(selected == i) tree_flags |= ImGuiTreeNodeFlags_Selected;
 			bool is_open = ImGui::TreeNodeEx(labels[scene[i].type].c_str(), tree_flags);
@@ -289,7 +271,7 @@ int main()
 		ImGui::End();
 		
 		
-		const int SIZE = sizeof(scene)/sizeof(scene[0]);
+		const int SIZE = scene.size();
 		
 
 		glm::vec3 poss[SIZE];
@@ -310,10 +292,13 @@ int main()
 		glUniform3f(glGetUniformLocation(shaderProgram.ID, "Cam_pos"), Position.x, Position.y, Position.z);
 		glUniform1i(glGetUniformLocation(shaderProgram.ID, "Iterations"), ITERATIONS);
 		glUniform1i(glGetUniformLocation(shaderProgram.ID, "Shadow_rays"), SHADOW_RAYS);
-		glUniform3fv(glGetUniformLocation(shaderProgram.ID, "Positions"), 6, glm::value_ptr(poss[0]));
-		glUniform4fv(glGetUniformLocation(shaderProgram.ID, "Arguments"), 6, glm::value_ptr(args[0]));
+		glUniform3fv(glGetUniformLocation(shaderProgram.ID, "Positions"), SIZE, glm::value_ptr(poss[0]));
+		glUniform4fv(glGetUniformLocation(shaderProgram.ID, "Arguments"), SIZE, glm::value_ptr(args[0]));
 		// Bind the VAO so OpenGL knows to use it
 		VAO1.Bind();
+		// Bind the UBO so OpenGL knows to use it
+		// UBO1.Bind();
+		// UBO1.WriteData(scene, object_size);
 		// Draw primitives, number of indices, datatype of indices, index of indices
 		glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
 
@@ -338,8 +323,8 @@ int main()
 	VAO1.Delete();
 	VBO1.Delete();
 	EBO1.Delete();
+	// UBO1.Delete();
 	shaderProgram.Delete();
-
 
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
