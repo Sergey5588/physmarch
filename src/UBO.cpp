@@ -2,8 +2,10 @@
 
 UBO::UBO(int struct_size, int buffer_size) {
     glGenBuffers(1, &ID);
+    Bind();
 
     glBufferData(GL_UNIFORM_BUFFER, struct_size * buffer_size, NULL, GL_DYNAMIC_DRAW);
+    UnBind();
 }
 
 void UBO::Bind() {
