@@ -35,6 +35,7 @@ std::vector<Object> scene = {
     Object{T_PLANE, O_BASE, glm::vec3(0, -1, 0), glm::vec4(0, 1, 0, 0), 2},
     Object{T_BULB, O_BASE, glm::vec3(0), glm::vec4(0), 1}
 };
+int lengths[T__LENGTH] = {1, 1, 1, 1, 1, 1};
 std::vector<std::string> labels = {
 	"Sphere",
 	"Box",
@@ -149,7 +150,14 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 int main()
 {
-
+	const char* ObjAsStr[] = {
+	"T_SPHERE",
+	"T_BOX",
+	"T_PRISM",
+	"T_TORUS",
+	"T_PLANE",
+	"T_BULB"
+};
 	glm::vec3 Orientation = glm::vec3(0,0,1);
 	glm::vec3 Position = glm::vec3(0,1,-3);
 	// Initialize GLFW
@@ -185,9 +193,9 @@ int main()
 	// Generates Shader object using shaders defualt.vert and default.frag
 	Shader shaderProgram("./resources/main.vert", "./resources/main.frag");
 
-	// UBO UBO1(object_size,1024);
-	// UBO1.Bind();
-	// UBO1.BindBase(shaderProgram.ID, 0);
+	UBO UBO1(object_size,128);
+	UBO1.Bind();
+	UBO1.BindBase(shaderProgram.ID, 0);
 	// Generates Vertex Array Object and binds it
 	VAO VAO1;
 	VAO1.Bind();
@@ -203,7 +211,7 @@ int main()
 	VAO1.Unbind();
 	VBO1.Unbind();
 	EBO1.Unbind();
-	// UBO1.UnBind();
+	UBO1.UnBind();
 	shaderProgram.Activate();
 	
 	IMGUI_CHECKVERSION();
@@ -227,6 +235,7 @@ int main()
     ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
 	glfwSetScrollCallback(window, scroll_callback);
 	int selected = -1;
+	int selected_obj_type = 0;
     // Setup Platform/Renderer backends
 	while (!glfwWindowShouldClose(window))
 	{	
@@ -249,7 +258,10 @@ int main()
 		ImGui::End();
 
 		ImGui::Begin("Scene editor");
-		
+		ImGui::Combo("Object type", &selected_obj_type, ObjAsStr,IM_ARRAYSIZE(ObjAsStr));
+		if(ImGui::Button("Add object")) {
+			
+		}		
 		for(int i = 0; i < scene.size(); i++) {
 			ImGuiTreeNodeFlags tree_flags = ImGuiTreeNodeFlags_None;
 			if(selected == i) tree_flags |= ImGuiTreeNodeFlags_Selected;
@@ -282,7 +294,8 @@ int main()
 		}
 		// Spec
 		// ify the color of the background
-		glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
+		// glClearColor(0.07f, 0.13f, 0.17f, 1.0f);
+		glClearColor(1,0,0,1);
 		// Clean the back buffer and assign the new color to it
 		glClear(GL_COLOR_BUFFER_BIT);
 		// Tell OpenGL which Shader Program we want to use
@@ -294,11 +307,12 @@ int main()
 		glUniform1i(glGetUniformLocation(shaderProgram.ID, "Shadow_rays"), SHADOW_RAYS);
 		glUniform3fv(glGetUniformLocation(shaderProgram.ID, "Positions"), SIZE, glm::value_ptr(poss[0]));
 		glUniform4fv(glGetUniformLocation(shaderProgram.ID, "Arguments"), SIZE, glm::value_ptr(args[0]));
+		glUniform1iv(glGetUniformLocation(shaderProgram.ID, "lengths"), T__LENGTH, &lengths[0]);
 		// Bind the VAO so OpenGL knows to use it
 		VAO1.Bind();
 		// Bind the UBO so OpenGL knows to use it
-		// UBO1.Bind();
-		// UBO1.WriteData(scene, object_size);
+		UBO1.Bind();
+		UBO1.WriteData(scene, object_size);
 		// Draw primitives, number of indices, datatype of indices, index of indices
 		glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
 
@@ -323,7 +337,7 @@ int main()
 	VAO1.Delete();
 	VBO1.Delete();
 	EBO1.Delete();
-	// UBO1.Delete();
+	UBO1.Delete();
 	shaderProgram.Delete();
 
 	ImGui_ImplOpenGL3_Shutdown();
@@ -335,6 +349,6 @@ int main()
 	glfwTerminate();
 
 
-
+	
 	return 0;
 }

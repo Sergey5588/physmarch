@@ -6,7 +6,7 @@ uniform int Iterations = 256;
 uniform int Shadow_rays = 100;
 uniform vec3 Positions[]= {vec3(0,2,0), vec3(0,0,0), vec3(0, -1, 0), vec3(0,2,0), vec3(0,0,0), vec3(0, -1, 0)};
 uniform vec4 Arguments[]= {vec4(1),vec4(1),vec4(1, 1, 0, 0), vec4(1),vec4(0, 1, 0, 0),vec4(1, 1, 0, 0)};
-
+uniform int lengths[] = {1, 1, 1, 1, 1, 1};
 out vec4 FragColor;
 #define M_PI 3.1415926535897932384626433832795
 
@@ -55,10 +55,10 @@ struct Object {
     int material_id;
 };
 
-const int UBO_SIZE = 1024;
+const int UBO_SIZE = 128;
 
 layout (std140, binding = 0) uniform UBO {
-   Object scene[UBO_SIZE];
+    Object scene[UBO_SIZE];
 };
 
 const Material materials[] = {
@@ -76,7 +76,7 @@ const Material materials[] = {
 //     Object(T_BULB, O_BASE, vec3(0), vec4(0), 1),
 // };
 
-int lengths[6];
+// int lengths[6];
 // borrowed from https://www.shadertoy.com/view/33S3Rh
 float specular(vec3 camera_pos, vec3 point, vec3 lightDir, vec3 normal, float rougness) {
     float a_coeff_2 = dot(normalize(normalize(camera_pos-point)-lightDir), normal);
@@ -222,13 +222,13 @@ void main() {
     //     scene[i].pos = Positions[i];
     //     scene[i].args = Arguments[i];
     // }
-
-    lengths[T_SPHERE] = 1;
-    lengths[T_BOX] = 1;
-    lengths[T_PRISM] = 1;
-    lengths[T_TORUS] = 1;
-    lengths[T_PLANE] = 1;
-    lengths[T_BULB] = 1;
+    
+    // lengths[T_SPHERE] = 1;
+    // lengths[T_BOX] = 1;
+    // lengths[T_PRISM] = 1;
+    // lengths[T_TORUS] = 1;
+    // lengths[T_PLANE] = 1;
+    // lengths[T_BULB] = 1;
     
 
     vec3 up = vec3(0.0, 1.0, 0.0);
@@ -302,5 +302,6 @@ void main() {
     } else {
         FragColor = clr;
     }
-    //FragColor = clr;
+    // FragColor = vec4(scene[0].pos, 1.0);
+
 }
