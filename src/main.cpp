@@ -13,7 +13,7 @@
 #include<imgui.h>
 #include<imgui_impl_glfw.h>
 #include<imgui_impl_opengl3.h>
-
+#include<imgui_stdlib.h>
 
 
 #include"shaderClass.h"
@@ -25,8 +25,29 @@
 #define Up glm::vec3(0,-1,0)
 
 #include"object.h"
+#include <algorithm> //std::count
+void update_ln(int lns[T__LENGTH], std::vector<Object> scn) {
+	for(int i = 0; i < T__LENGTH; ++i) {
+		lns[i] = 0;
+	}
 
+	for(auto i:scn) {
+		lns[i.type]++;
+	}
+}
 
+void add_object(std::vector<Object> &scn, Object obj, std::vector<std::string> &lb, std::string name) {
+
+	
+	for(int i = 0; i < scn.size(); ++i) {
+		if(scn[i].type == obj.type) {
+			scn.insert(scn.begin()+i, obj);
+			
+			lb.insert(lb.begin()+i,name);
+			break;
+		}
+	}
+}
 std::vector<Object> scene = {
 	Object{T_SPHERE, O_BASE, glm::vec3(0,3,0), glm::vec4(0), 0},
 	Object{T_BOX, O_BASE, glm::vec3(0,1,0), glm::vec4(1), 0},
@@ -35,7 +56,9 @@ std::vector<Object> scene = {
     Object{T_PLANE, O_BASE, glm::vec3(0, -1, 0), glm::vec4(0, 1, 0, 0), 2},
     Object{T_BULB, O_BASE, glm::vec3(0), glm::vec4(0), 1}
 };
-int lengths[T__LENGTH] = {1, 1, 1, 1, 1, 1};
+//int lengths[T__LENGTH] = {1, 1, 1, 1, 1, 1};
+
+int lengths[T__LENGTH] = {};
 std::vector<std::string> labels = {
 	"Sphere",
 	"Box",
@@ -148,16 +171,18 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 	}
 }
 
+
 int main()
 {
+	update_ln(lengths, scene);
 	const char* ObjAsStr[] = {
-	"T_SPHERE",
-	"T_BOX",
-	"T_PRISM",
-	"T_TORUS",
-	"T_PLANE",
-	"T_BULB"
-};
+		"T_SPHERE",
+		"T_BOX",
+		"T_PRISM",
+		"T_TORUS",
+		"T_PLANE",
+		"T_BULB"
+	};
 	glm::vec3 Orientation = glm::vec3(0,0,1);
 	glm::vec3 Position = glm::vec3(0,1,-3);
 	// Initialize GLFW
@@ -236,6 +261,7 @@ int main()
 	glfwSetScrollCallback(window, scroll_callback);
 	int selected = -1;
 	int selected_obj_type = 0;
+	std::string new_name = "null";
     // Setup Platform/Renderer backends
 	while (!glfwWindowShouldClose(window))
 	{	
@@ -259,13 +285,34 @@ int main()
 
 		ImGui::Begin("Scene editor");
 		ImGui::Combo("Object type", &selected_obj_type, ObjAsStr,IM_ARRAYSIZE(ObjAsStr));
+		ImGui::InputText("Object name", &new_name);
 		if(ImGui::Button("Add object")) {
+			if(std::find(labels.begin(), labels.end(), new_name)==labels.end()) {
+				add_object(scene, 
+					Object{selected_obj_type, O_BASE, glm::vec3(0,3,0), glm::vec4(1), 0},
+					labels,
+					new_name
+				);
 			
-		}		
+
+
+			} else {
+				ImGui::OpenPopup("Error");
+				
+			}
+			update_ln(lengths, scene);
+		}
+		if (ImGui::BeginPopupModal("Error")) {
+ 			ImGui::Text("Error: name already exists");
+			if(ImGui::Button("OK")) {
+				ImGui::CloseCurrentPopup();
+			}
+  			ImGui::EndPopup();
+		}
 		for(int i = 0; i < scene.size(); i++) {
 			ImGuiTreeNodeFlags tree_flags = ImGuiTreeNodeFlags_None;
 			if(selected == i) tree_flags |= ImGuiTreeNodeFlags_Selected;
-			bool is_open = ImGui::TreeNodeEx(labels[scene[i].type].c_str(), tree_flags);
+			bool is_open = ImGui::TreeNodeEx(labels[i].c_str(), tree_flags);
 
 			if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen()) {
 				selected = i;
@@ -283,12 +330,11 @@ int main()
 		ImGui::End();
 		
 		
-		const int SIZE = scene.size();
 		
 
-		glm::vec3 poss[SIZE];
-		glm::vec4 args[SIZE];
-		for (int i = 0; i < SIZE; ++i) {
+		glm::vec3 poss[scene.size()];
+		glm::vec4 args[scene.size()];
+		for (int i = 0; i < scene.size(); ++i) {
 			poss[i] = scene[i].pos;
 			args[i] = scene[i].args;
 		}
@@ -305,8 +351,8 @@ int main()
 		glUniform3f(glGetUniformLocation(shaderProgram.ID, "Cam_pos"), Position.x, Position.y, Position.z);
 		glUniform1i(glGetUniformLocation(shaderProgram.ID, "Iterations"), ITERATIONS);
 		glUniform1i(glGetUniformLocation(shaderProgram.ID, "Shadow_rays"), SHADOW_RAYS);
-		glUniform3fv(glGetUniformLocation(shaderProgram.ID, "Positions"), SIZE, glm::value_ptr(poss[0]));
-		glUniform4fv(glGetUniformLocation(shaderProgram.ID, "Arguments"), SIZE, glm::value_ptr(args[0]));
+		glUniform3fv(glGetUniformLocation(shaderProgram.ID, "Positions"),scene.size() , glm::value_ptr(poss[0]));
+		glUniform4fv(glGetUniformLocation(shaderProgram.ID, "Arguments"), scene.size(), glm::value_ptr(args[0]));
 		glUniform1iv(glGetUniformLocation(shaderProgram.ID, "lengths"), T__LENGTH, &lengths[0]);
 		// Bind the VAO so OpenGL knows to use it
 		VAO1.Bind();
