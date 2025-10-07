@@ -1,12 +1,19 @@
-#version 450 core
+#version 300 es
+//#version 450 core
+precision highp float;
+precision highp int;
+
 uniform vec2 Resolution;
 uniform vec3 Orientation;
 uniform vec3 Cam_pos;
-uniform int Iterations = 256;
-uniform int Shadow_rays = 100;
-uniform vec3 Positions[]= {vec3(0,2,0), vec3(0,0,0), vec3(0, -1, 0), vec3(0,2,0), vec3(0,0,0), vec3(0, -1, 0)};
-uniform vec4 Arguments[]= {vec4(1),vec4(1),vec4(1, 1, 0, 0), vec4(1),vec4(0, 1, 0, 0),vec4(1, 1, 0, 0)};
-uniform int lengths[] = {1, 1, 1, 1, 1, 1};
+uniform int Iterations;
+uniform int Shadow_rays;
+//uniform vec3 Positions[]= {vec3(0,2,0), vec3(0,0,0), vec3(0, -1, 0), vec3(0,2,0), vec3(0,0,0), vec3(0, -1, 0)};
+uniform vec3 Positions[6];
+//uniform vec4 Arguments[]= {vec4(1),vec4(1),vec4(1, 1, 0, 0), vec4(1),vec4(0, 1, 0, 0),vec4(1, 1, 0, 0)};
+uniform vec4 Arguments[6];
+//uniform int lengths[] = {1, 1, 1, 1, 1, 1};
+uniform int lengths[6];
 out vec4 FragColor;
 #define M_PI 3.1415926535897932384626433832795
 
@@ -57,15 +64,17 @@ struct Object {
 
 const int UBO_SIZE = 128;
 
-layout (std140, binding = 0) uniform UBO {
+//layout (std140, binding=0) uniform UBO {
+layout (std140) uniform UBO {
     Object scene[UBO_SIZE];
 };
 
-const Material materials[] = {
-    Material(0, vec4(1,0,1,1), false),
-    Material(0.5, vec4(0,1,0,1), false),
-    Material(0, vec4(0,0.7,0,1), false)
-};
+// const Material materials[] = {
+//     Material(0, vec4(1,0,1,1), false),
+//     Material(0.5, vec4(0,1,0,1), false),
+//     Material(0, vec4(0,0.7,0,1), false)
+// };
+Material materials[3];
 
 // Object scene[] = {
 //     Object(T_SPHERE, O_BASE, vec3(0,2,0), vec4(1), 1),
@@ -171,10 +180,12 @@ float angleBetween(vec3 A, vec3 B) {
 //with max-ts help
 float sdfMap(vec3 ray)
 {
-
+    materials[0] = Material(0.0, vec4(1,0,1,1), false);
+    materials[1] = Material(0.5, vec4(0,1,0,1), false);
+    materials[2] = Material(0.0, vec4(0,0.7,0,1), false);
     
     int object_id = 0;
-    float min_dist = MAX_DIST+1;
+    float min_dist = MAX_DIST+1.0;
 
     PROCESS_OBJECT_TYPE(T_SPHERE, sphere)
     PROCESS_OBJECT_TYPE(T_BOX, box)
@@ -187,7 +198,7 @@ float sdfMap(vec3 ray)
 //with max-ts help
 int getMaterial(vec3 ray) {
     
-    float min_dist = MAX_DIST + 1;
+    float min_dist = MAX_DIST + 1.0;
     int object_id = 0;
     int material = 0;
 
@@ -234,7 +245,7 @@ void main() {
     vec3 up = vec3(0.0, 1.0, 0.0);
     vec3 right = normalize(cross(up, Orientation));
     vec3 localUp = normalize(cross(-right, Orientation));
-    vec3 focalPoint = vec3(Resolution.x/2, Resolution.y/2, -400.0);
+    vec3 focalPoint = vec3(Resolution.x/2.0, Resolution.y/2.0, -400.0);
     vec3 ray = gl_FragCoord.xyz - focalPoint;
     
     vec3 raydir = normalize(ray);
@@ -243,7 +254,7 @@ void main() {
     
     float dist = 0.0;
 
-    if (sdfMap(Cam_pos) < 0) {
+    if (sdfMap(Cam_pos) < 0.0) {
         raydir *= -1.0;
     }
 
@@ -288,7 +299,7 @@ void main() {
     vec3 obj_color = (materials[material].color.rgb)   * ((max(dot(normal(ray), sun_dir), 0.0)) * coef + 0.3);
     vec4 clr = vec4(obj_color + specular(Cam_pos, ray, -sun_dir, normal(ray), materials[material].roughness), 1.0);
     if(dist >= 0.001) {
-        if(ray.y > 0) {
+        if(ray.y > 0.0) {
             if (dot(raydir, sun_dir) > 0.99) {
                 FragColor = vec4(1.0);
             }

@@ -1,7 +1,11 @@
 #ifndef UBO_CLASS_H
 #define UBO_CLASS_H
 
+#ifndef __EMSCRIPTEN__
 #include"glad.h"
+#else
+#include <GLES3/gl3.h>
+#endif
 #include"object.h"
 #include<vector>
 //with max-ts help

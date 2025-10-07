@@ -1,7 +1,11 @@
 #ifndef SHADER_CLASS_H
 #define SHADER_CLASS_H
 
+#ifndef __EMSCRIPTEN__
 #include"glad.h"
+#else
+#include <GLES3/gl3.h>
+#endif
 #include<string>
 #include<fstream>
 #include<sstream>

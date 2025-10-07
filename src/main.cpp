@@ -1,6 +1,13 @@
 #include<iostream>
+#ifndef __EMSCRIPTEN__
 #include"glad.h"
-#include<GLFW/glfw3.h>
+#else
+#include <GLES3/gl3.h>
+#include <emscripten.h>
+#define GL_GLEXT_PROTOTYPES
+#define EGL_EGLEXT_PROTOTYPES
+#endif
+#include <GLFW/glfw3.h>
 #define GLM_ENABLE_EXPERIMENTAL
 #include<glm/glm.hpp>
 #include<glm/gtx/matrix_transform_2d.hpp>
@@ -10,10 +17,10 @@
 #include<glm/gtc/type_ptr.hpp>
 #include<vector>
 
-#include<imgui.h>
-#include<imgui_impl_glfw.h>
-#include<imgui_impl_opengl3.h>
-#include<imgui_stdlib.h>
+#include<imgui/imgui.h>
+#include<imgui/imgui_impl_glfw.h>
+#include<imgui/imgui_impl_opengl3.h>
+#include<imgui/imgui_stdlib.h>
 
 
 #include"shaderClass.h"
@@ -67,7 +74,7 @@ std::vector<std::string> labels = {
 	"Plane",
 	"Bulb"
 };
-
+glm::vec2 last_mouse_pos;
 //extern bool MOUSE_LOCK;
 bool MOUSE_LOCK = true;
 float SPEED = 0.01f;
@@ -77,6 +84,7 @@ int HEIGHT = 800;
 int ITERATIONS = 256;
 int SHADOW_RAYS = 100;
 // Vertices coordinates
+#ifndef __EMSCRIPTEN__
 GLfloat vertices[] =
 {
 	-1.0f, -1.0f, 0.0f,
@@ -85,6 +93,17 @@ GLfloat vertices[] =
 	1.0f, -1.0f, 0.0f
 
 };
+#else
+GLfloat vertices[] =
+{
+	-1.0f, -1.0f, 0.0f,
+	-1.0f, 1.0f, 0.0f,
+	1.0f, 1.0f, 0.0f,
+	1.0f, -1.0f, 0.0f,
+	-1.0f, -1.0f, 0.0f,
+	1.0f, 1.0f, 0.0f,
+};
+#endif
 
 // Indices for vertices order
 GLuint indices[] =
@@ -92,6 +111,9 @@ GLuint indices[] =
 	0,1,2,
 	2,3,0
 };
+
+std::function<void()> loop;
+void main_loop() { loop(); }
 
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -103,9 +125,22 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 void HandleInput(GLFWwindow* window, glm::vec3& Orientation, glm::vec3& Position, int height, int width) {
+#ifndef __EMSCRIPTEN__
+	bool condition = MOUSE_LOCK;
+#else
+	bool condition = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+	if (!condition)
+	{
+		double mouseX = 0;
+		double mouseY = 0;
 
-	
-	if (MOUSE_LOCK) {
+		glfwGetCursorPos(window, &mouseX, &mouseY);
+		last_mouse_pos = glm::vec2(mouseX, mouseY);
+	}
+#endif
+	#ifndef __EMSCRIPTEN__
+	if (condition) {
+	#endif
 
 		
 		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
@@ -126,7 +161,9 @@ void HandleInput(GLFWwindow* window, glm::vec3& Orientation, glm::vec3& Position
 		if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
 			Position += Up * SPEED;
 		}
-		
+	#ifdef __EMSCRIPTEN__
+	if (condition) {
+	#endif
 		
 			
 		
@@ -135,15 +172,22 @@ void HandleInput(GLFWwindow* window, glm::vec3& Orientation, glm::vec3& Position
 		double mouseX = 0;
 		double mouseY = 0;
 		double sensitivity = 100.0f;
+
 		glfwGetCursorPos(window, &mouseX, &mouseY);
+
 		
+		#ifndef __EMSCRIPTEN__
 		float rotX = (float)(mouseX - (width / 2)) / width * sensitivity;
 		float rotY = (float)(mouseY - (height / 2)) / height * sensitivity;
 
+		glfwSetCursorPos(window, width/2, height/2);
+		#else
+		float rotX = (float)(mouseX - last_mouse_pos.x) / width * sensitivity;
+		float rotY = (float)(mouseY - last_mouse_pos.y) / height * sensitivity;
+		last_mouse_pos = glm::vec2(mouseX, mouseY);
+		#endif
 		Orientation = glm::rotate(Orientation, glm::radians(-rotY), glm::normalize(glm::cross(Orientation, -Up)));
 		Orientation = glm::rotate(Orientation, glm::radians(-rotX), Up);
-		
-		glfwSetCursorPos(window, width/2, height/2);
 	}
 	//std::cout << std::to_string(Orientation.x) +" "+ std::to_string(Orientation.y) +" "+ std::to_string(Orientation.z) << std::endl;
 
@@ -208,7 +252,9 @@ int main()
 	glfwMakeContextCurrent(window);
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	//Load GLAD so it configures OpenGL
+	#ifndef __EMSCRIPTEN__
 	gladLoadGL();
+	#endif
 	// Specify the viewport of OpenGL in the Window
 	// In this case the viewport goes from x = 0, y = 0, to x = 800, y = 800
 	glViewport(0, 0, WIDTH, HEIGHT);
@@ -254,17 +300,18 @@ int main()
 	
 	
 	glfwSetCursorPos(window, WIDTH/2, HEIGHT/2);
-	glfwSwapInterval(1);
 	glfwSetKeyCallback(window, key_callback);
 	
     ImGui_ImplGlfw_InitForOpenGL(window, true);          // Second param install_callback=true will install GLFW callbacks and chain to existing ones.
 	glfwSetScrollCallback(window, scroll_callback);
+
 	int selected = -1;
 	int selected_obj_type = 0;
 	std::string new_name = "null";
     // Setup Platform/Renderer backends
-	while (!glfwWindowShouldClose(window))
-	{	
+	loop = [&]
+	{
+		
 		if(MOUSE_LOCK)
 			ImGui::SetMouseCursor(ImGuiMouseCursor_None);
 		glfwPollEvents();
@@ -360,8 +407,11 @@ int main()
 		UBO1.Bind();
 		UBO1.WriteData(scene, object_size);
 		// Draw primitives, number of indices, datatype of indices, index of indices
+#ifndef __EMSCRIPTEN__
 		glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
-
+#else
+		glDrawArrays(GL_TRIANGLES, 0, 6);
+#endif
 		ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
@@ -369,13 +419,20 @@ int main()
 		glfwSwapBuffers(window);
 		HandleInput(window, Orientation, Position, HEIGHT, WIDTH);
 		// Take care of all GLFW events
+	};
+	
+#ifdef __EMSCRIPTEN__
+    emscripten_set_main_loop(main_loop, 0, true);
+	emscripten_set_main_loop_timing(EM_TIMING_RAF, 60);
+#else
+	glfwSwapInterval(1);
 
-		
+    while (!glfwWindowShouldClose(window))
+        main_loop();
+#endif
 
 
-		
-		
-	}
+
 
 
 
