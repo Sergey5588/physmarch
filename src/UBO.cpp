@@ -16,8 +16,8 @@ void UBO::UnBind() {
     glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
 
-void UBO::BindBase(GLuint shaderProgram, GLuint base) {
-    GLuint UBOBufferIdx = glGetUniformBlockIndex(shaderProgram, "UBO");
+void UBO::BindBase(GLuint shaderProgram, GLuint base, std::string buffer_name) {
+    GLuint UBOBufferIdx = glGetUniformBlockIndex(shaderProgram, buffer_name.c_str());
     glUniformBlockBinding (shaderProgram, UBOBufferIdx, base);
 
     glBindBufferBase(GL_UNIFORM_BUFFER, base, ID);
@@ -28,6 +28,15 @@ void UBO::WriteData(std::vector<Object> &objects, int struct_size) {
     GLintptr offset = 0;
     for (const auto& object : objects) {
         glBufferSubData(GL_UNIFORM_BUFFER, offset, size, (void*)&object.type);
+        offset += struct_size;
+    }
+}
+
+void UBO::WriteData(std::vector<Material> &materials, int struct_size) { 
+    GLsizeiptr size = struct_size;
+    GLintptr offset = 0;
+    for (const auto& object : materials) {
+        glBufferSubData(GL_UNIFORM_BUFFER, offset, size, (void*)&object.color.r);
         offset += struct_size;
     }
 }
