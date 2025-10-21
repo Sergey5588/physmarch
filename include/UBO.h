@@ -8,6 +8,7 @@
 #endif
 #include"object.h"
 #include<vector>
+#include <string>
 //with max-ts help
 class UBO {
     public:
@@ -16,8 +17,9 @@ class UBO {
         UBO(int struct_size, int buffer_size);
         void Bind();
         void UnBind();
-        void BindBase(GLuint shaderProgram, GLuint base);
+        void BindBase(GLuint shaderProgram, GLuint base, std::string buffer_name);
         void WriteData(std::vector<Object> &objects, int struct_size);
+        void WriteData(std::vector<Material> &materials, int struct_size);
         void Delete();
 };
 

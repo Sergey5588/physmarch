@@ -49,9 +49,9 @@ const float MIN_DIST = 0.00001;
 vec3 sun_dir = normalize(vec3(1, 2, 3));
 
 struct Material {
-    float roughness;
     vec4 color;
-    bool reflective;
+    float roughness;
+//    bool reflective;
 };
 
 struct Object {
@@ -63,10 +63,13 @@ struct Object {
 };
 
 const int UBO_SIZE = 128;
-
+const int MATERIAL_SIZE = 128;
 //layout (std140, binding=0) uniform UBO {
 layout (std140) uniform UBO {
     Object scene[UBO_SIZE];
+};
+layout (std140) uniform materialUBO {
+    Material materials[MATERIAL_SIZE];
 };
 
 // const Material materials[] = {
@@ -74,7 +77,7 @@ layout (std140) uniform UBO {
 //     Material(0.5, vec4(0,1,0,1), false),
 //     Material(0, vec4(0,0.7,0,1), false)
 // };
-Material materials[3];
+// Material materials[3];
 
 // Object scene[] = {
 //     Object(T_SPHERE, O_BASE, vec3(0,2,0), vec4(1), 1),
@@ -180,9 +183,6 @@ float angleBetween(vec3 A, vec3 B) {
 //with max-ts help
 float sdfMap(vec3 ray)
 {
-    materials[0] = Material(0.0, vec4(1,0,1,1), false);
-    materials[1] = Material(0.5, vec4(0,1,0,1), false);
-    materials[2] = Material(0.0, vec4(0,0.7,0,1), false);
     
     int object_id = 0;
     float min_dist = MAX_DIST+1.0;
@@ -240,7 +240,9 @@ void main() {
     // lengths[T_TORUS] = 1;
     // lengths[T_PLANE] = 1;
     // lengths[T_BULB] = 1;
-    
+    // materials[0] = Material(vec4(1,0,1,1), 1.0);
+    // materials[1] = Material(vec4(0,1,0,1), 0.5);
+    // materials[2] = Material(vec4(0,0.7,0,1), 1.0);
 
     vec3 up = vec3(0.0, 1.0, 0.0);
     vec3 right = normalize(cross(up, Orientation));

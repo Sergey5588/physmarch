@@ -4,6 +4,7 @@
 #else
 #include <GLES3/gl3.h>
 #include <emscripten.h>
+#include <emscripten/html5.h>
 #define GL_GLEXT_PROTOTYPES
 #define EGL_EGLEXT_PROTOTYPES
 #endif
@@ -63,6 +64,11 @@ std::vector<Object> scene = {
     Object{T_PLANE, O_BASE, glm::vec3(0, -1, 0), glm::vec4(0, 1, 0, 0), 2},
     Object{T_BULB, O_BASE, glm::vec3(0), glm::vec4(0), 1}
 };
+std::vector<Material> materials = {
+    Material(glm::vec4(1,0,1,1), 1.0),
+    Material(glm::vec4(0,1,0,1), 0.5),
+    Material(glm::vec4(0,0.7,0,1), 1.0)
+};
 //int lengths[T__LENGTH] = {1, 1, 1, 1, 1, 1};
 
 int lengths[T__LENGTH] = {};
@@ -84,6 +90,8 @@ int HEIGHT = 800;
 int ITERATIONS = 256;
 int SHADOW_RAYS = 100;
 // Vertices coordinates
+
+GLFWwindow* window;
 #ifndef __EMSCRIPTEN__
 GLfloat vertices[] =
 {
@@ -195,7 +203,7 @@ void HandleInput(GLFWwindow* window, glm::vec3& Orientation, glm::vec3& Position
 
 
 }
-
+#ifndef __EMSCRIPTEN__
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 {
     // make sure the viewport matches the new window dimensions; note that width and 
@@ -203,8 +211,31 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 	glViewport(0, 0, width, height);
 	WIDTH = width;
 	HEIGHT = height;
+	printf("callback called %d %d\n", width, height);
 }
+#else
+void UpdateWindowSize()
+{
+	double cssWidth, cssHeight;
+	emscripten_get_element_css_size("#canvas", &cssWidth, &cssHeight);
+	// emscripten_get_element_size("#canvas");
+	glViewport(0, 0, cssWidth, cssHeight);
 
+	glfwSetWindowSize(window, cssWidth, cssHeight);
+	emscripten_set_canvas_element_size("#canvas", cssWidth, cssHeight);
+	//emscripten_set_canvas_size(uiEvent->windowInnerWidth, uiEvent->windowInnerHeight);
+	//ImGuiIO& io = ImGui::GetIO();
+  
+	WIDTH = cssWidth;
+	HEIGHT = cssHeight;
+}
+EM_BOOL emscWindowSizeChanged(int eventType, const EmscriptenUiEvent *uiEvent, void *userData) {
+    
+	UpdateWindowSize();
+	return EM_TRUE;
+	//  pp7v3ppd
+}
+#endif
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
 	if(MOUSE_LOCK) {
@@ -214,7 +245,6 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 		ImGui_ImplGlfw_ScrollCallback(window, xoffset, yoffset);
 	}
 }
-
 
 int main()
 {
@@ -240,7 +270,7 @@ int main()
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	// Create a GLFWwindow object of 800 by 800 pixels, naming it "YoutubeOpenGL"
-	GLFWwindow* window = glfwCreateWindow(WIDTH, HEIGHT, "Ray_marching", NULL, NULL);
+	window = glfwCreateWindow(WIDTH, HEIGHT, "Ray_marching", NULL, NULL);
 	// Error check if the window fails to create
 	if (window == NULL)
 	{
@@ -250,23 +280,33 @@ int main()
 	}
 	// Introduce the window into the current context
 	glfwMakeContextCurrent(window);
-	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	//Load GLAD so it configures OpenGL
 	#ifndef __EMSCRIPTEN__
 	gladLoadGL();
-	#endif
+	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 	// Specify the viewport of OpenGL in the Window
 	// In this case the viewport goes from x = 0, y = 0, to x = 800, y = 800
 	glViewport(0, 0, WIDTH, HEIGHT);
+	#else
+	UpdateWindowSize();
+	//glfwSetWindowSize(window, cssHeight, cssWidth);
+	emscripten_set_resize_callback(EMSCRIPTEN_EVENT_TARGET_WINDOW, nullptr, EM_FALSE, emscWindowSizeChanged);
+	#endif
+	
+	
 
 
 
 	// Generates Shader object using shaders defualt.vert and default.frag
 	Shader shaderProgram("./resources/main.vert", "./resources/main.frag");
-
+	
 	UBO UBO1(object_size,128);
 	UBO1.Bind();
-	UBO1.BindBase(shaderProgram.ID, 0);
+	UBO1.BindBase(shaderProgram.ID, 0, "UBO");
+
+	UBO materialUBO(material_size, 128);
+	materialUBO.Bind();
+	materialUBO.BindBase(shaderProgram.ID, 1, "materialUBO");
 	// Generates Vertex Array Object and binds it
 	VAO VAO1;
 	VAO1.Bind();
@@ -283,6 +323,7 @@ int main()
 	VBO1.Unbind();
 	EBO1.Unbind();
 	UBO1.UnBind();
+	materialUBO.UnBind();
 	shaderProgram.Activate();
 	
 	IMGUI_CHECKVERSION();
@@ -311,9 +352,10 @@ int main()
     // Setup Platform/Renderer backends
 	loop = [&]
 	{
-		
-		if(MOUSE_LOCK)
-			ImGui::SetMouseCursor(ImGuiMouseCursor_None);
+		#ifndef __EMSCRIPTEN__
+			if(MOUSE_LOCK)
+				ImGui::SetMouseCursor(ImGuiMouseCursor_None);
+		#endif
 		glfwPollEvents();
 		
 		ImGui_ImplOpenGL3_NewFrame();
@@ -323,7 +365,6 @@ int main()
 		ImGui::SetNextWindowPos(ImVec2(0,0));
 		ImGui::ShowDemoWindow();
 
-		
 		ImGui::Begin("Control panel");
 		ImGui::SliderInt("Iterations", &ITERATIONS, 0, 1000);
 		ImGui::SliderInt("Shadow rays", &SHADOW_RAYS, 0, 100);
@@ -406,6 +447,9 @@ int main()
 		// Bind the UBO so OpenGL knows to use it
 		UBO1.Bind();
 		UBO1.WriteData(scene, object_size);
+
+		materialUBO.Bind();
+		materialUBO.WriteData(materials, material_size);
 		// Draw primitives, number of indices, datatype of indices, index of indices
 #ifndef __EMSCRIPTEN__
 		glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
@@ -441,6 +485,7 @@ int main()
 	VBO1.Delete();
 	EBO1.Delete();
 	UBO1.Delete();
+	materialUBO.Delete();
 	shaderProgram.Delete();
 
 	ImGui_ImplOpenGL3_Shutdown();
