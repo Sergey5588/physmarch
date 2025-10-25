@@ -24,7 +24,7 @@ void ImguiRenderer::render_top_bar()
                 printf("nope\n");
             }
             if (ImGui::MenuItem("Save", "Ctrl+S")) {
-                printf("saved\n");
+                scene.OfferDownload();
             }
             if (ImGui::MenuItem("Getlink")) {
                 printf("link\n");
