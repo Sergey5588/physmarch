@@ -33,7 +33,10 @@
 #define Up glm::vec3(0,-1,0)
 
 #include"object.h"
+#include"scene.h"
+#include"imgui_renderer.h"
 #include <algorithm> //std::count
+#include <functional>
 void update_ln(int lns[T__LENGTH], std::vector<Object> scn) {
 	for(int i = 0; i < T__LENGTH; ++i) {
 		lns[i] = 0;
@@ -79,6 +82,11 @@ std::vector<std::string> labels = {
 	"Torus",
 	"Plane",
 	"Bulb"
+};
+std::vector<std::string> material_names = {
+	"Ping",
+	"Reflective green",
+	"Grass"
 };
 glm::vec2 last_mouse_pos;
 //extern bool MOUSE_LOCK;
@@ -248,7 +256,7 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 int main()
 {
-	update_ln(lengths, scene);
+	
 	const char* ObjAsStr[] = {
 		"T_SPHERE",
 		"T_BOX",
@@ -349,6 +357,17 @@ int main()
 	int selected = -1;
 	int selected_obj_type = 0;
 	std::string new_name = "null";
+
+	Scene render_scene{};
+	render_scene.objects = scene;
+	render_scene.materials = materials;
+	render_scene.labels = labels;
+	render_scene.material_names = material_names;
+
+	render_scene.update_ln();
+
+	ImguiRenderer ui_renderer(render_scene, Position, ITERATIONS, SHADOW_RAYS);
+	
     // Setup Platform/Renderer backends
 	loop = [&]
 	{
@@ -358,73 +377,19 @@ int main()
 		#endif
 		glfwPollEvents();
 		
-		ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-
-		ImGui::SetNextWindowPos(ImVec2(0,0));
-		ImGui::ShowDemoWindow();
-
-		ImGui::Begin("Control panel");
-		ImGui::SliderInt("Iterations", &ITERATIONS, 0, 1000);
-		ImGui::SliderInt("Shadow rays", &SHADOW_RAYS, 0, 100);
-		ImGui::DragFloat3("Camera position", glm::value_ptr(Position), 0, 0.01);
-		ImGui::End();
-
-		ImGui::Begin("Scene editor");
-		ImGui::Combo("Object type", &selected_obj_type, ObjAsStr,IM_ARRAYSIZE(ObjAsStr));
-		ImGui::InputText("Object name", &new_name);
-		if(ImGui::Button("Add object")) {
-			if(std::find(labels.begin(), labels.end(), new_name)==labels.end()) {
-				add_object(scene, 
-					Object{selected_obj_type, O_BASE, glm::vec3(0,3,0), glm::vec4(1), 0},
-					labels,
-					new_name
-				);
-			
-
-
-			} else {
-				ImGui::OpenPopup("Error");
-				
-			}
-			update_ln(lengths, scene);
-		}
-		if (ImGui::BeginPopupModal("Error")) {
- 			ImGui::Text("Error: name already exists");
-			if(ImGui::Button("OK")) {
-				ImGui::CloseCurrentPopup();
-			}
-  			ImGui::EndPopup();
-		}
-		for(int i = 0; i < scene.size(); i++) {
-			ImGuiTreeNodeFlags tree_flags = ImGuiTreeNodeFlags_None;
-			if(selected == i) tree_flags |= ImGuiTreeNodeFlags_Selected;
-			bool is_open = ImGui::TreeNodeEx(labels[i].c_str(), tree_flags);
-
-			if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen()) {
-				selected = i;
-			}
-
-			if (is_open) {
-				ImGui::BulletText("Props:");
-				ImGui::DragFloat3("Position", glm::value_ptr(scene[i].pos), 0.1f);
-				ImGui::DragFloat4("Arguments", glm::value_ptr(scene[i].args), 0.1f);
-				ImGui::TreePop();
-			}
-		}
-
-
-		ImGui::End();
+		ui_renderer.imgui_start_frame();
+		ui_renderer.render_top_bar();
+		ui_renderer.imgui_render_control_panel();
+		ui_renderer.imgui_render_scene_editor();
 		
 		
 		
 
-		glm::vec3 poss[scene.size()];
-		glm::vec4 args[scene.size()];
-		for (int i = 0; i < scene.size(); ++i) {
-			poss[i] = scene[i].pos;
-			args[i] = scene[i].args;
+		glm::vec3 poss[render_scene.objects.size()];
+		glm::vec4 args[render_scene.objects.size()];
+		for (int i = 0; i < render_scene.objects.size(); ++i) {
+			poss[i] = render_scene.objects[i].pos;
+			args[i] = render_scene.objects[i].args;
 		}
 		// Spec
 		// ify the color of the background
@@ -439,17 +404,17 @@ int main()
 		glUniform3f(glGetUniformLocation(shaderProgram.ID, "Cam_pos"), Position.x, Position.y, Position.z);
 		glUniform1i(glGetUniformLocation(shaderProgram.ID, "Iterations"), ITERATIONS);
 		glUniform1i(glGetUniformLocation(shaderProgram.ID, "Shadow_rays"), SHADOW_RAYS);
-		glUniform3fv(glGetUniformLocation(shaderProgram.ID, "Positions"),scene.size() , glm::value_ptr(poss[0]));
-		glUniform4fv(glGetUniformLocation(shaderProgram.ID, "Arguments"), scene.size(), glm::value_ptr(args[0]));
-		glUniform1iv(glGetUniformLocation(shaderProgram.ID, "lengths"), T__LENGTH, &lengths[0]);
+		glUniform3fv(glGetUniformLocation(shaderProgram.ID, "Positions"),render_scene.objects.size() , glm::value_ptr(poss[0]));
+		glUniform4fv(glGetUniformLocation(shaderProgram.ID, "Arguments"), render_scene.objects.size(), glm::value_ptr(args[0]));
+		glUniform1iv(glGetUniformLocation(shaderProgram.ID, "lengths"), T__LENGTH, &render_scene.lengths[0]);
 		// Bind the VAO so OpenGL knows to use it
 		VAO1.Bind();
 		// Bind the UBO so OpenGL knows to use it
 		UBO1.Bind();
-		UBO1.WriteData(scene, object_size);
+		UBO1.WriteData(render_scene.objects, object_size);
 
 		materialUBO.Bind();
-		materialUBO.WriteData(materials, material_size);
+		materialUBO.WriteData(render_scene.materials, material_size);
 		// Draw primitives, number of indices, datatype of indices, index of indices
 #ifndef __EMSCRIPTEN__
 		glDrawElements(GL_TRIANGLES, 9, GL_UNSIGNED_INT, 0);
