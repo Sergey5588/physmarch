@@ -34,6 +34,7 @@
 
 #include"object.h"
 #include"scene.h"
+#include"networking.h"
 #include"imgui_renderer.h"
 #include <algorithm> //std::count
 #include <functional>
@@ -95,8 +96,8 @@ float SPEED = 0.01f;
 int WIDTH = 800;
 int HEIGHT = 800;
 
-int ITERATIONS = 256;
-int SHADOW_RAYS = 100;
+int ITERATIONS = 64;
+int SHADOW_RAYS = 32;
 // Vertices coordinates
 
 GLFWwindow* window;
@@ -358,15 +359,17 @@ int main()
 	int selected_obj_type = 0;
 	std::string new_name = "null";
 
+	NetworkData network_data;
+
 	Scene render_scene{};
 	render_scene.objects = scene;
 	render_scene.materials = materials;
 	render_scene.labels = labels;
 	render_scene.material_names = material_names;
-
+	render_scene.network_data = &network_data;
 	render_scene.update_ln();
 
-	ImguiRenderer ui_renderer(render_scene, Position, ITERATIONS, SHADOW_RAYS);
+	ImguiRenderer ui_renderer(render_scene, network_data, Position, ITERATIONS, SHADOW_RAYS);
 	
     // Setup Platform/Renderer backends
 	loop = [&]

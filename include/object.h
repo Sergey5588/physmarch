@@ -30,7 +30,7 @@ struct alignas(16) Object {
     alignas(4) int material_id;
     alignas(4) int _padding;   // Explicit padding
 	Object(int type, int operation, glm::vec3 pos, glm::vec4 args, int material_id) : type(type), operation(operation), pos(pos), args(args), material_id(material_id) {}
-
+	Object() {};
 };
 // struct Material {
 //     float roughness;
@@ -46,7 +46,7 @@ struct alignas(16) Material {
 	alignas(4) int _padding2;   // Explicit padding
 	alignas(4) int _padding3;
 	Material(glm::vec4 color, float roughness) : color(color), roughness(roughness) {}
-
+	Material() {};
 };
 
 static_assert(offsetof(Object, pos) == 16, "pos offset incorrect");
