@@ -6,7 +6,8 @@ Also, check website for our project: [physmarch.com](https://physmarch.com)! (MA
 > We used AI to help checking code for logic erros, some code explanation and help with tools, but all the code was written by humans!
 
 ## Gallery
-![Demo1](https://github.com/Sergey5588/physmarch/blob/master/demos/demo1.gif)
+<img width="480" height="270" alt="изображение" src="https://github.com/user-attachments/assets/8b681a3e-48f3-4fa0-91ce-3967eab25762" />
+
 [Second demo (youtube)](https://youtu.be/ahUss3JYl2I)
 
 ## Compile from source
