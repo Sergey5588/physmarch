@@ -1,12 +1,12 @@
-Raymarching game engine made by me and my friend [@MAX-TS](https://github.com/MAX-TS) (he helped with materials and lighting)
+# 🇬🇧 EN [🇷🇺 RU](https://github.com/Sergey5588/physmarch/blob/master/README-RU.md)
+Raymarching game engine made by me and my friend [@MAX-TS](https://github.com/MAX-TS)
 
-Also, check website for our project: [physmarch.com](https://physmarch.com)! (MAX-TS make this, and I make main project)
+Also, check website for our project: [physmarch.com](https://physmarch.com)!
 
 > [!NOTE]
 > We used AI to help checking code for logic erros, some code explanation and help with tools, but all the code was written by humans!
 
 ## Gallery
-<img width="480" height="270" alt="изображение" src="https://github.com/user-attachments/assets/8b681a3e-48f3-4fa0-91ce-3967eab25762" />
 
 [Second demo (youtube)](https://youtu.be/ahUss3JYl2I)
 
@@ -56,7 +56,7 @@ make
 - [ ] texturing
 - [x] shading
 - [ ] game engine API
-- [ ] proper scene system
+- [X] proper scene system
 - [ ] shape editor
 - [ ] physics engine
 
