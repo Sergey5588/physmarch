@@ -24,8 +24,10 @@
         var Module = {
             canvas: document.getElementById('canvas')
         };
-        
-        
+        Module['locateFile'] = function(path, prefix) {
+          // Use the root path for all files
+          return "/" + path;
+        };
     </script>
     {{{ SCRIPT }}}
 </body>

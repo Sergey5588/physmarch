@@ -21,8 +21,9 @@ public:
     void OfferDownload();
     void LoadFromLocalFile();
     void LoadFromCloudFile(std::string file_name, std::string user_name);
-    void LoadFromLink(std::string link);
-
+    void LoadFromLink();
+    void LoadFromLink2(std::string link);
+    void SetupLoadListener();
     std::string ConvertToJson();
     std::vector<Object> objects;
     std::vector<Material> materials;

@@ -2,7 +2,6 @@
 
 void Scene::update_ln() {
 	for(int i = 0; i < T__LENGTH; ++i) {
-        printf("%d\n",lengths[i]);
 		lengths[i] = 0;
 	}
 
@@ -17,9 +16,11 @@ void Scene::add_object(Object obj, std::string name) {
 			objects.insert(objects.begin()+i, obj);
             //lengths[obj.type]++;
 			labels.insert(labels.begin()+i,name);
-			break;
+			return;
 		}
 	}
+    objects.push_back(obj);
+    labels.push_back(name);
 }
 
 void Scene::delete_object(Object* obj, std::string* label) {
@@ -53,7 +54,7 @@ void to_json(nlohmann::json& j, const Object& object) {
 
 void to_json(nlohmann::json& j, const Material& material) {
     j = {
-        {"color", {material.color.r, material.color.g, material.color.r, material.color.w},},
+        {"color", {material.color.r, material.color.g, material.color.b, material.color.w},},
         {"roughness", material.roughness}
     };
 }
@@ -76,14 +77,11 @@ void from_json(const nlohmann::json& j, Object& object)
 
 void from_json(const nlohmann::json& j, Material& material)
 {
-    printf("from_json_mat\n");
     std::vector<float> vec;
     j.at("color").get_to(vec);
-    printf("color\n");
     material.color = glm::vec4(vec[0], vec[1], vec[2], vec[3]);
 
     j.at("roughness").get_to(material.roughness);
-    printf("rough\n");
 }
 
 
@@ -100,19 +98,14 @@ std::string Scene::ConvertToJson()
 
 void Scene::LoadFromJson(std::string file)
 {
-    printf("%s\n", file.c_str());
-    printf("function_called\n");
-    
+    if (file == "")
+        return;
     nlohmann::json json = nlohmann::json::parse(file);
-    printf("parsed?\n");
+    
     json.at("objects").get_to(objects);
-    printf("objects?\n");
     json.at("materials").get_to(materials);
-    printf("materials?\n");
     json.at("object_names").get_to(labels);
-    printf("labels\n");
     json.at("material_names").get_to(material_names);
-    printf("done?\n");
     update_ln();
 }
 
@@ -146,9 +139,7 @@ extern "C" {
         // }
         // std::cout << std::endl;
         // LoadFromJson(std::string(data));
-        printf("almost there\n");
         Scene* scene = static_cast<Scene*>(scene_ptr_void);
-        printf("ded\n");
         scene->LoadFromJson(std::string(data, size));
     }
 }
@@ -209,18 +200,92 @@ void Scene::LoadFromLocalFile()
 }
 
 #ifdef __EMSCRIPTEN__
-void RecieveFile(struct emscripten_fetch_t *fetch)
+
+extern "C" {
+    EMSCRIPTEN_KEEPALIVE
+    void receive_link(void* scene_ptr_void, const char* data, int size) {
+        Scene* scene = static_cast<Scene*>(scene_ptr_void);
+        std::string link = std::string(data, size);
+        scene->LoadFromLink2(link);
+    }
+}
+
+EM_JS(char*, get_browser_url_js, (long scene_ptr), {
+    // This code runs in the browser's JavaScript environment
+    const url = window.location.href;
+    const encoder = new TextEncoder();
+    const data = encoder.encode(url);
+    const size = data.length;
+    console.log(data.length);
+    // Allocate memory in WASM heap
+    var buffer = _malloc(size);
+    HEAPU8.set(data, buffer);
+
+    // Call the C++ function with the file data
+    Module.ccall(
+        'receive_link',
+        'null',
+        ['number','number', 'number'],
+        [scene_ptr, buffer, size]
+    );
+
+    // Clean up allocated memory
+    _free(buffer);
+});
+#endif
+void RecieveFile(http_response *fetch)
 {
     auto scene = static_cast<Scene*>(fetch->userData);
     scene->LoadFromJson(std::string(fetch->data, fetch->numBytes));
 }
-#endif
+#ifdef __EMSCRIPTEN__
+extern "C" {
+    EMSCRIPTEN_KEEPALIVE
+    void loadFromArrow(void* scene_ptr, const char* file_name, int file_name_len, const char* username, int username_len)
+    {
+        Scene* scene = static_cast<Scene*>(scene_ptr);
+        scene->LoadFromCloudFile(std::string(file_name, file_name_len), std::string(username, username_len));
+    }
+}
 
-void Scene::LoadFromLink(std::string link)
+EM_JS(void, SetupListener, (long scene_ptr), {
+    window.addEventListener('popstate', function(event) {
+        if (event.state)
+        {
+            var username = event.state.username;
+            var file_name = event.state.file_name; 
+            Module.ccall(
+                'loadFromArrow',
+                'null',
+                ['number', 'string', 'number', 'string', 'number'],
+                [scene_ptr, file_name, file_name.length, username, username.length]
+            );
+            document.title = username + ": " + file_name;
+        } else 
+        {
+            window.location.reload();
+        }
+    });
+});
+
+
+#endif
+void Scene::SetupLoadListener()
 {
     #ifdef __EMSCRIPTEN__
-    network_data->GetFileFromCloud(link,  RecieveFile, static_cast<void*>(this));
-    LoadFromJson(network_data->downloaded_file);
+    SetupListener(reinterpret_cast<long>(this));
+    #endif
+}
+void Scene::LoadFromLink()
+{   
+    #ifdef __EMSCRIPTEN__
+    get_browser_url_js(reinterpret_cast<long>(this));
+    #endif
+}
+void Scene::LoadFromLink2(std::string link)
+{
+    #ifdef __EMSCRIPTEN__
+    network_data->GetFileFromCloud(link, RecieveFile, static_cast<void*>(this));
     #endif
 }
 

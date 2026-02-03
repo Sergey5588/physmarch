@@ -1,17 +1,22 @@
 #include "networking.h"
-#ifdef __EMSCRIPTEN__
-void downloadSucceeded(emscripten_fetch_t *fetch) {
+
+// let's reasses this file for a bit
+// we want a single function to send http request on both browser and desktop versions
+// 
+
+void downloadSucceeded(http_response *fetch) {
   printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);
   // The data is now available at fetch->data[0] through fetch->data[fetch->numBytes-1];
-  emscripten_fetch_close(fetch); // Free data associated with the fetch.
+  //emscripten_fetch_close(fetch); // Free data associated with the fetch.
 }
 
-void downloadFailed(emscripten_fetch_t *fetch) {
+void downloadFailed(http_response *fetch) {
   printf("Downloading %s failed, HTTP failure status code: %d.\n", fetch->url, fetch->status);
-  emscripten_fetch_close(fetch); // Also free data on failure.
+  //emscripten_fetch_close(fetch); // Also free data on failure.
 }
 
-void RecieveFileNames(emscripten_fetch_t *fetch)
+
+void RecieveFileNames(http_response *fetch)
 {
     auto network_data = static_cast<NetworkData*>(fetch->userData);
     auto data_json = nlohmann::json::parse(std::string(fetch->data, fetch->numBytes));
@@ -20,11 +25,11 @@ void RecieveFileNames(emscripten_fetch_t *fetch)
     data_json.at("file_permissions").get_to(network_data->file_permissions);
 }
 
-void NetworkData::sendJson(std::string data_json, std::string adress, void (*onsuccess)(emscripten_fetch_t *fetch), void (*onerror)(emscripten_fetch_t *fetch))
+void NetworkData::sendJson(std::string data_json, std::string adress, void (*onsuccess)(http_response *fetch), void (*onerror)(http_response *fetch))
 {
     data_buffer = data_json;
-    emscripten_fetch_attr_t attr;
-    emscripten_fetch_attr_init(&attr);
+    http_attribute attr;
+    //emscripten_fetch_attr_init(&attr);
     strcpy(attr.requestMethod, "POST");
     attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
     // attr.userData = this;
@@ -40,15 +45,9 @@ void NetworkData::sendJson(std::string data_json, std::string adress, void (*ons
     attr.requestData = data_buffer.c_str();
     attr.requestDataSize = data_buffer.size();
 
-    emscripten_fetch(&attr, adress.c_str());
+    request(&attr, adress.c_str());
 
 }
-#else
-void downloadSucceeded() {}
-void downloadFailed() {}
-void NetworkData::sendJson(std::string data_json, std::string adress, void (*onsuccess)(), void (*onerror)()) {}
-
-#endif
 
 
 
@@ -62,7 +61,7 @@ void NetworkData::Register(std::string passwrd, std::string user_name, std::stri
     data["username"] = user_name;
     data["email"] = email;
 
-    sendJson(data.dump(), "http://127.0.0.1:5000/signup", downloadSucceeded, downloadFailed);
+    sendJson(data.dump(), "/api/signup", downloadSucceeded, downloadFailed);
 }
 
 void NetworkData::LogIn(std::string passwrd, std::string user_name)
@@ -71,12 +70,12 @@ void NetworkData::LogIn(std::string passwrd, std::string user_name)
     username = user_name;
 }
 
-#ifdef __EMSCRIPTEN__
-void NetworkData::GetFileFromCloud(std::string link, void (*onsuccess)(emscripten_fetch_t *fetch), void* ptr)
+
+void NetworkData::GetFileFromCloud(std::string link, void (*onsuccess)(http_response *fetch), void* ptr)
 {
     nlohmann::json data;
-
-    int index = 0;
+    printf("%s\n", link.c_str());
+    int index = 8;
     while (index < link.size() && link[index] != '/') {
         index++;
     }
@@ -84,45 +83,23 @@ void NetworkData::GetFileFromCloud(std::string link, void (*onsuccess)(emscripte
     while (index2 < link.size() && link[index2] != '/') {
         index2++;
     }
-    std::string user_name = link.substr(index + 1, index2 - index - 2);
+    printf("hm\n");
+    if (index2 == index + 1 || index2 == link.size()) {
+        printf("parseerror\n");
+        return;
+    }
+    std::string user_name = link.substr(index + 1, index2 - index - 1);
+    std::string file_name = link.substr(index2 + 1, link.size() - index2 - 1);
+    current_file_name = file_name;
+    current_file_owner = user_name;
     if (user_name == username) {
         data["password"] = password;
     }
     data_buffer = data.dump();
 
-    #ifdef __EMSCRIPTEN__
-    emscripten_fetch_attr_t attr;
-    emscripten_fetch_attr_init(&attr);
-    strcpy(attr.requestMethod, "POST");
-    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-    attr.userData = this;
-    attr.onsuccess = onsuccess;
-    attr.onerror = downloadFailed;
 
-    const char* headers[] = {
-        "Content-Type", "application/json",
-        nullptr // Null terminator for the header array
-    };
-
-    attr.requestHeaders = headers;
-    attr.requestData = data_buffer.c_str();
-    attr.requestDataSize = data_buffer.size();
-
-    emscripten_fetch(&attr, link.c_str());
-    #endif
-
-}
-
-void NetworkData::GetFileFromCloud(std::string file_name, std::string user_name, void (*onsuccess)(emscripten_fetch_t *fetch), void* ptr)
-{
-    nlohmann::json data;
-    if (user_name == username)
-    {
-        data["password"] = password;
-    }
-    #ifdef __EMSCRIPTEN__
-    emscripten_fetch_attr_t attr;
-    emscripten_fetch_attr_init(&attr);
+    http_attribute attr;
+    //emscripten_fetch_attr_init(&attr);
     strcpy(attr.requestMethod, "POST");
     attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
     attr.userData = ptr;
@@ -138,47 +115,116 @@ void NetworkData::GetFileFromCloud(std::string file_name, std::string user_name,
     attr.requestData = data_buffer.c_str();
     attr.requestDataSize = data_buffer.size();
 
-    emscripten_fetch(&attr, ("http://127.0.0.1:5000/users/"+user_name+"/"+file_name).c_str());
-    #endif
+    request(&attr, ("/api/users/" + user_name + "/" + file_name).c_str());
+
+
 }
-#endif
 
-void NetworkData::UploadFile(std::string file)
+void NetworkData::GetFileFromCloud(std::string file_name, std::string user_name, void (*onsuccess)(http_response* fetch), void* ptr)
 {
+    current_file_name = file_name;
+    current_file_owner = user_name;
     nlohmann::json data;
-
-    data["password"] = password;
-    data["username"] = username;
-    data["file_name"] = current_file_name;
-    data["file"] = file;
-
-    sendJson(data.dump(), "http://127.0.0.1:5000/upload", downloadSucceeded, downloadFailed);
-}
-#ifdef __EMSCRIPTEN__
-void NetworkData::GetUserFileNames()
-{
-    nlohmann::json data;
-    data["password"] = password;
-    data["username"] = username;
+    if (user_name == username)
+    {
+        data["password"] = password;
+    }
     data_buffer = data.dump();
-    emscripten_fetch_attr_t attr;
-    emscripten_fetch_attr_init(&attr);
+
+    http_attribute attr;
+    
     strcpy(attr.requestMethod, "POST");
     attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
-    attr.userData = this;
-    attr.onsuccess = RecieveFileNames;
+    attr.userData = ptr;
+    attr.onsuccess = onsuccess;
     attr.onerror = downloadFailed;
 
     const char* headers[] = {
         "Content-Type", "application/json",
         nullptr // Null terminator for the header array
     };
-    
+
     attr.requestHeaders = headers;
     attr.requestData = data_buffer.c_str();
     attr.requestDataSize = data_buffer.size();
 
-    emscripten_fetch(&attr, "http://127.0.0.1:5000/getuserfilenames");
+    request(&attr, ("/api/users/"+user_name+"/"+file_name).c_str());
+
+}
+
+
+void NetworkData::UploadFile(std::string file)
+{
+    nlohmann::json data;
+
+    data["password"] = password;
+    data["username"] = current_file_owner;
+    data["file_name"] = current_file_name;
+    data["file"] = file;
+
+    sendJson(data.dump(), "/api/upload", downloadSucceeded, downloadFailed);
+}
+
+void NetworkData::GetUserFileNames()
+{
+    nlohmann::json data;
+    data["password"] = password;
+    data["username"] = username;
+    data_buffer = data.dump();
+    http_attribute attr;
+    //emscripten_fetch_attr_init(&attr);
+    strcpy(attr.requestMethod, "POST");
+    attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+    attr.userData = this;
+    attr.onsuccess = RecieveFileNames;
+    //attr.onerror = downloadFailed;
+    const char* headers[] = {
+        "Content-Type", "application/json",
+        nullptr // Null terminator for the header array
+    };
+    attr.requestHeaders = headers;
+    attr.requestData = data_buffer.c_str();
+    attr.requestDataSize = data_buffer.size();
+    request(&attr, "/api/getuserfilenames");
+}
+#ifdef __EMSCRIPTEN__
+// void NetworkData::GetUserFileNames()
+// {
+//     nlohmann::json data;
+//     data["password"] = password;
+//     data["username"] = username;
+//     data_buffer = data.dump();
+//     emscripten_fetch_attr_t attr;
+//     emscripten_fetch_attr_init(&attr);
+//     strcpy(attr.requestMethod, "POST");
+//     attr.attributes = EMSCRIPTEN_FETCH_LOAD_TO_MEMORY;
+//     attr.userData = this;
+//     attr.onsuccess = RecieveFileNames;
+//     attr.onerror = downloadFailed;
+
+//     const char* headers[] = {
+//         "Content-Type", "application/json",
+//         nullptr // Null terminator for the header array
+//     };
+    
+//     attr.requestHeaders = headers;
+//     attr.requestData = data_buffer.c_str();
+//     attr.requestDataSize = data_buffer.size();
+
+//     emscripten_fetch(&attr, "/api/getuserfilenames");
+// }
+
+EM_JS(void, push_link, (const char* file_name, const char* username), {
+    var name = UTF8ToString(file_name);
+    var user_name = UTF8ToString(username);
+    var title = user_name + ": " + name;
+    window.history.pushState({ file_name: name, username: user_name }, title, "/"+user_name+"/"+name);
+    document.title = title;
+});
+
+void NetworkData::UpdateLink()
+{
+    push_link(current_file_name.c_str(), current_file_owner.c_str());
 }
 #endif
 
@@ -190,5 +236,7 @@ void NetworkData::SetFilePermission(std::string file_name, std::string permissio
     data["file_name"] = file_name;
     data["permission"] = permission;
 
-    sendJson(data.dump(), "http://127.0.0.1:5000/setfilepermission", downloadSucceeded, downloadFailed);
+    sendJson(data.dump(), "/api/setfilepermission", downloadSucceeded, downloadFailed);
 }
+
+

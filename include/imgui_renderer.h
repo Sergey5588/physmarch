@@ -59,9 +59,5 @@ private:
     std::string new_object_name = "null";
     std::string new_material_name = "null";
 
-    std::string username = "";
-    std::string email = "";
-    std::string password = "";
-
 };
 #endif

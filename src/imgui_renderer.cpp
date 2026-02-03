@@ -91,12 +91,12 @@ void ImguiRenderer::render_top_bar()
     }
     if (ImGui::BeginPopupModal("Sign up"))
     {
-        ImGui::InputText("User name", &username);
-        ImGui::InputText("Email", &email);
-        ImGui::InputText("password", &password);
+        ImGui::InputText("User name", &network_data.username);
+        ImGui::InputText("Email", &network_data.email);
+        ImGui::InputText("password", &network_data.password);
         if (ImGui::Button("Sign up"))
         {
-            network_data.Register(password, username, email);
+            network_data.Register(network_data.password, network_data.username, network_data.email);
         }
         if(ImGui::Button("Close")) {
             ImGui::CloseCurrentPopup();
@@ -125,6 +125,10 @@ void ImguiRenderer::render_top_bar()
             {
                 scene.LoadFromCloudFile(network_data.file_names[i], network_data.username);
                 network_data.current_file_name = network_data.file_names[i];
+                network_data.current_file_owner = network_data.username;
+                #ifdef __EMSCRIPTEN__
+                network_data.UpdateLink();
+                #endif
             }
 
         }

@@ -142,9 +142,10 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 }
 
 void HandleInput(GLFWwindow* window, glm::vec3& Orientation, glm::vec3& Position, int height, int width) {
-#ifndef __EMSCRIPTEN__
+	ImGuiIO& io = ImGui::GetIO();
+	#ifndef __EMSCRIPTEN__
 	bool condition = MOUSE_LOCK;
-#else
+	#else
 	bool condition = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
 	if (!condition)
 	{
@@ -154,29 +155,31 @@ void HandleInput(GLFWwindow* window, glm::vec3& Orientation, glm::vec3& Position
 		glfwGetCursorPos(window, &mouseX, &mouseY);
 		last_mouse_pos = glm::vec2(mouseX, mouseY);
 	}
-#endif
+	#endif
 	#ifndef __EMSCRIPTEN__
 	if (condition) {
 	#endif
 
-		
-		if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-			Position += Orientation * SPEED;
-		}
-		if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-			Position -= Orientation * SPEED;
-		}
-		if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-			Position -= glm::normalize(glm::cross(Orientation, Up)) * SPEED;
-		}
-		if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
-			Position += glm::normalize(glm::cross(Orientation, Up)) * SPEED;
-		}
-		if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
-			Position -= Up * SPEED;
-		}
-		if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
-			Position += Up * SPEED;
+		if (!io.WantCaptureKeyboard)
+		{
+			if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+				Position += Orientation * SPEED;
+			}
+			if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+				Position -= Orientation * SPEED;
+			}
+			if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+				Position -= glm::normalize(glm::cross(Orientation, Up)) * SPEED;
+			}
+			if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS) {
+				Position += glm::normalize(glm::cross(Orientation, Up)) * SPEED;
+			}
+			if (glfwGetKey(window, GLFW_KEY_Q) == GLFW_PRESS) {
+				Position -= Up * SPEED;
+			}
+			if (glfwGetKey(window, GLFW_KEY_E) == GLFW_PRESS) {
+				Position += Up * SPEED;
+			}
 		}
 	#ifdef __EMSCRIPTEN__
 	if (condition) {
@@ -184,7 +187,8 @@ void HandleInput(GLFWwindow* window, glm::vec3& Orientation, glm::vec3& Position
 		
 			
 		
-		
+		if (io.WantCaptureMouse)
+			return;
 
 		double mouseX = 0;
 		double mouseY = 0;
@@ -367,7 +371,9 @@ int main()
 	render_scene.labels = labels;
 	render_scene.material_names = material_names;
 	render_scene.network_data = &network_data;
+	render_scene.LoadFromLink();
 	render_scene.update_ln();
+	render_scene.SetupLoadListener();
 
 	ImguiRenderer ui_renderer(render_scene, network_data, Position, ITERATIONS, SHADOW_RAYS);
 	
@@ -429,6 +435,7 @@ int main()
 
 		// Swap the back buffer with the front buffer
 		glfwSwapBuffers(window);
+		
 		HandleInput(window, Orientation, Position, HEIGHT, WIDTH);
 		// Take care of all GLFW events
 	};

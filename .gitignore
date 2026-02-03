@@ -1,3 +1,8 @@
 /build
 /.vscode
 /imgui.ini
+a.data
+a.html
+a.js
+a.wasm
+include/glm
