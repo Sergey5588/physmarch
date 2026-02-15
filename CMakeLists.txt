@@ -3,7 +3,7 @@ project(ray_marching VERSION 0.1.0)
 cmake_policy(SET CMP0072 NEW)
 find_package(OpenGL REQUIRED)
 find_package(glfw3 REQUIRED)
-include_directories(include include/imgui)
+include_directories(include include/imgui include/ImGuiColorTextEdit)
 
 
 file(GLOB raySRC CONFIGURE_DEPENDS 
