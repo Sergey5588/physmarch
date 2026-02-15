@@ -9,7 +9,9 @@ include_directories(include include/imgui)
 file(GLOB raySRC CONFIGURE_DEPENDS 
     "include/*.h" 
     "include/imgui/*.h"
+    "include/ImGuiColorTextEdit/*.h"
     "src/imgui/*.cpp"
+    "src/ImGuiColorTextEdit/*.cpp"
     "src/*.cpp" 
     "src/*.c"
 )

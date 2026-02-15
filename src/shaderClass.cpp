@@ -22,21 +22,21 @@ Shader::Shader(const char* vertexFile, const char* fragmentFile)
 {
 	// Read vertexFile and fragmentFile and store the strings
 	std::string vertexCode = get_file_contents(vertexFile);
-	std::string fragmentCode = get_file_contents(fragmentFile);
+	fragmentCode = get_file_contents(fragmentFile);
 
 	// Convert the shader source strings into character arrays
 	const char* vertexSource = vertexCode.c_str();
 	const char* fragmentSource = fragmentCode.c_str();
 
 	// Create Vertex Shader Object and get its reference
-	GLuint vertexShader = glCreateShader(GL_VERTEX_SHADER);
+	vertexShader = glCreateShader(GL_VERTEX_SHADER);
 	// Attach Vertex Shader source to the Vertex Shader Object
 	glShaderSource(vertexShader, 1, &vertexSource, NULL);
 	// Compile the Vertex Shader into machine code
 	glCompileShader(vertexShader);
 
 	// Create Fragment Shader Object and get its reference
-	GLuint fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+	fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
 	// Attach Fragment Shader source to the Fragment Shader Object
 	glShaderSource(fragmentShader, 1, &fragmentSource, NULL);
 	// Compile the Vertex Shader into machine code
@@ -52,8 +52,29 @@ Shader::Shader(const char* vertexFile, const char* fragmentFile)
 
 	// Delete the now useless Vertex and Fragment Shader objects
 	glDeleteShader(vertexShader);
-	glDeleteShader(fragmentShader);
+	
+	//we will need this shader later
+	//glDeleteShader(fragmentShader);
 
+}
+
+void Shader::RecompileShader(std::string fragment_shader_string)
+{
+	const char* fragment_shader_source = fragment_shader_string.c_str();
+	
+	glShaderSource(fragmentShader, 1, &fragment_shader_source, NULL);
+	glCompileShader(fragmentShader);
+	CheckShader(fragmentShader);
+	glLinkProgram(ID);
+	BindBufferBases();
+}
+
+void Shader::BindBufferBases()
+{
+	objects->Bind();
+	objects->BindBase(ID, 0, "UBO");
+	materials->Bind();
+	materials->BindBase(ID, 1, "materialUBO");
 }
 
 // Activates the Shader Program
@@ -66,4 +87,31 @@ void Shader::Activate()
 void Shader::Delete()
 {
 	glDeleteProgram(ID);
+}
+
+void Shader::CheckShader(GLuint shader)
+{
+	GLint compiled;
+	glGetShaderiv(shader, GL_COMPILE_STATUS, &compiled); // Check compile status
+
+	if (compiled == GL_FALSE)
+	{
+		GLint length;
+		glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &length); // Get the length of the info log
+
+		// Allocate buffer for the log
+		GLchar* infoLog = new GLchar[length]; 
+
+		// Retrieve the log
+		glGetShaderInfoLog(shader, length, NULL, infoLog); 
+
+		printf("ERROR: Shader compilation failed!\n");
+		printf("%s\n", infoLog); // Print the error messages
+
+		// Clean up
+		delete[] infoLog;
+		glDeleteShader(shader); // Delete the shader, as it's useless
+
+		// Handle error as needed (e.g., exit application, throw exception)
+	}
 }

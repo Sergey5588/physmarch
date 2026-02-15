@@ -14,7 +14,8 @@
 #include"object.h"
 #include"scene.h"
 #include"networking.h"
-
+#include<TextEditor.h>
+#include"shaderClass.h"
 // struct ui_translation {
 //     std::string File;
 //     std::string Account;
@@ -32,18 +33,21 @@
 class ImguiRenderer
 {
 public:
-    ImguiRenderer(Scene& scene, NetworkData& network_data, glm::vec3& Position,int& ITERATIONS, int& SHADOW_RAYS);
+    ImguiRenderer(Scene& scene, NetworkData& network_data, Shader* shaders, glm::vec3& Position,int& ITERATIONS, int& SHADOW_RAYS);
     void imgui_start_frame();
     void render_top_bar();
     void imgui_render_control_panel();
     void imgui_render_scene_editor();
+    void RenderTextEditor();
 private:
     int &ITERATIONS;
     int& SHADOW_RAYS;
     glm::vec3& Position;
     Scene& scene;
     NetworkData& network_data;
+    Shader* shaders;
 
+    TextEditor text_editor;
     const char* ObjAsStr[6] = {
 		"T_SPHERE",
 		"T_BOX",
@@ -52,12 +56,18 @@ private:
 		"T_PLANE",
 		"T_BULB",
 	};
+    std::vector<std::string> object_names;
     int object_selected = -1;
     int material_selected = -1;
+    int custom_object_selected = -1;
+
+    int custom_object_currently_edited = 0;
 
     int selected_obj_type = 0;
     std::string new_object_name = "null";
     std::string new_material_name = "null";
+    std::string new_object_type_name = "null";
 
+    bool editor_opened = false;
 };
 #endif

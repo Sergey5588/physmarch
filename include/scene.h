@@ -27,11 +27,12 @@ public:
     std::string ConvertToJson();
     std::vector<Object> objects;
     std::vector<Material> materials;
+    CustomObjects custom_objects;
     std::vector<std::string> labels;
     std::vector<std::string> material_names;
 
     NetworkData* network_data;
-    int lengths[T__LENGTH];
+    int lengths[max_object_type_count];
     void LoadFromJson(std::string file);
 };
 #endif

@@ -6,3 +6,4 @@ a.html
 a.js
 a.wasm
 include/glm
+include/GLFW

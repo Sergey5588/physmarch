@@ -13,7 +13,7 @@ uniform vec3 Positions[6];
 //uniform vec4 Arguments[]= {vec4(1),vec4(1),vec4(1, 1, 0, 0), vec4(1),vec4(0, 1, 0, 0),vec4(1, 1, 0, 0)};
 uniform vec4 Arguments[6];
 //uniform int lengths[] = {1, 1, 1, 1, 1, 1};
-uniform int lengths[6];
+uniform int lengths[128]; // max object types
 out vec4 FragColor;
 #define M_PI 3.1415926535897932384626433832795
 
@@ -178,9 +178,9 @@ float angleBetween(vec3 A, vec3 B) {
     float cosTheta = dotAB / (lenA * lenB);
     return cosTheta; // cos
 }
+//***Custom_object_implementation_placeholder***//
 
 
-//with max-ts help
 float sdfMap(vec3 ray)
 {
     
@@ -193,9 +193,11 @@ float sdfMap(vec3 ray)
     PROCESS_OBJECT_TYPE(T_TORUS, torus)
     PROCESS_OBJECT_TYPE(T_PLANE, plane)
     PROCESS_OBJECT_TYPE(T_BULB, bulb)
+    //***Custom_object_distance_computation_placeholder***//
     return min_dist;
 }
-//with max-ts help
+
+
 int getMaterial(vec3 ray) {
     
     float min_dist = MAX_DIST + 1.0;
@@ -208,6 +210,7 @@ int getMaterial(vec3 ray) {
     PROCESS_MATERIAL_ID(T_TORUS, torus)
     PROCESS_MATERIAL_ID(T_PLANE, plane)
     PROCESS_MATERIAL_ID(T_BULB, bulb)
+    //***Custom_object_material_computation_placeholder***//
     return material;
 }
 

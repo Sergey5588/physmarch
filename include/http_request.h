@@ -1,3 +1,5 @@
+#ifndef HTTP_REQUEST_H
+#define HTTP_REQUEST_H
 #ifdef __EMSCRIPTEN__
 #include<emscripten.h>
 #include <emscripten/fetch.h>
@@ -165,3 +167,4 @@ void onerror_wrapper(emscripten_fetch_t *fetch);
 #endif
 
 void request(http_attribute* fetch_attr, const char* url);
+#endif

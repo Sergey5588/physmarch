@@ -38,28 +38,8 @@
 #include"imgui_renderer.h"
 #include <algorithm> //std::count
 #include <functional>
-void update_ln(int lns[T__LENGTH], std::vector<Object> scn) {
-	for(int i = 0; i < T__LENGTH; ++i) {
-		lns[i] = 0;
-	}
 
-	for(auto i:scn) {
-		lns[i.type]++;
-	}
-}
 
-void add_object(std::vector<Object> &scn, Object obj, std::vector<std::string> &lb, std::string name) {
-
-	
-	for(int i = 0; i < scn.size(); ++i) {
-		if(scn[i].type == obj.type) {
-			scn.insert(scn.begin()+i, obj);
-			
-			lb.insert(lb.begin()+i,name);
-			break;
-		}
-	}
-}
 std::vector<Object> scene = {
 	Object{T_SPHERE, O_BASE, glm::vec3(0,3,0), glm::vec4(0), 0},
 	Object{T_BOX, O_BASE, glm::vec3(0,1,0), glm::vec4(1), 0},
@@ -75,7 +55,7 @@ std::vector<Material> materials = {
 };
 //int lengths[T__LENGTH] = {1, 1, 1, 1, 1, 1};
 
-int lengths[T__LENGTH] = {};
+int lengths[max_object_type_count] = {};
 std::vector<std::string> labels = {
 	"Sphere",
 	"Box",
@@ -141,7 +121,8 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
     }
 }
 
-void HandleInput(GLFWwindow* window, glm::vec3& Orientation, glm::vec3& Position, int height, int width) {
+void HandleInput(GLFWwindow* window, glm::vec3& Orientation, glm::vec3& Position, int height, int width)
+{
 	ImGuiIO& io = ImGui::GetIO();
 	#ifndef __EMSCRIPTEN__
 	bool condition = MOUSE_LOCK;
@@ -314,12 +295,15 @@ int main()
 	Shader shaderProgram("./resources/main.vert", "./resources/main.frag");
 	
 	UBO UBO1(object_size,128);
-	UBO1.Bind();
-	UBO1.BindBase(shaderProgram.ID, 0, "UBO");
+	shaderProgram.objects = &UBO1;
+	// UBO1.Bind();
+	// UBO1.BindBase(shaderProgram.ID, 0, "UBO");
 
 	UBO materialUBO(material_size, 128);
-	materialUBO.Bind();
-	materialUBO.BindBase(shaderProgram.ID, 1, "materialUBO");
+	shaderProgram.materials = &materialUBO;
+	// materialUBO.Bind();
+	// materialUBO.BindBase(shaderProgram.ID, 1, "materialUBO");
+	shaderProgram.BindBufferBases();
 	// Generates Vertex Array Object and binds it
 	VAO VAO1;
 	VAO1.Bind();
@@ -374,8 +358,9 @@ int main()
 	render_scene.LoadFromLink();
 	render_scene.update_ln();
 	render_scene.SetupLoadListener();
+	render_scene.custom_objects = {};
 
-	ImguiRenderer ui_renderer(render_scene, network_data, Position, ITERATIONS, SHADOW_RAYS);
+	ImguiRenderer ui_renderer(render_scene, network_data, &shaderProgram, Position, ITERATIONS, SHADOW_RAYS);
 	
     // Setup Platform/Renderer backends
 	loop = [&]
@@ -390,7 +375,7 @@ int main()
 		ui_renderer.render_top_bar();
 		ui_renderer.imgui_render_control_panel();
 		ui_renderer.imgui_render_scene_editor();
-		
+		ui_renderer.RenderTextEditor();
 		
 		
 
@@ -415,7 +400,7 @@ int main()
 		glUniform1i(glGetUniformLocation(shaderProgram.ID, "Shadow_rays"), SHADOW_RAYS);
 		glUniform3fv(glGetUniformLocation(shaderProgram.ID, "Positions"),render_scene.objects.size() , glm::value_ptr(poss[0]));
 		glUniform4fv(glGetUniformLocation(shaderProgram.ID, "Arguments"), render_scene.objects.size(), glm::value_ptr(args[0]));
-		glUniform1iv(glGetUniformLocation(shaderProgram.ID, "lengths"), T__LENGTH, &render_scene.lengths[0]);
+		glUniform1iv(glGetUniformLocation(shaderProgram.ID, "lengths"), max_object_type_count, &render_scene.lengths[0]);
 		// Bind the VAO so OpenGL knows to use it
 		VAO1.Bind();
 		// Bind the UBO so OpenGL knows to use it

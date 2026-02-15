@@ -1,7 +1,19 @@
 #include"imgui_renderer.h"
 
-ImguiRenderer::ImguiRenderer(Scene& scene, NetworkData& network_data, glm::vec3& Position,int& ITERATIONS, int& SHADOW_RAYS)
- : scene(scene), network_data(network_data), Position(Position), ITERATIONS(ITERATIONS), SHADOW_RAYS(SHADOW_RAYS) {}
+ImguiRenderer::ImguiRenderer(Scene& scene, NetworkData& network_data, Shader* shaders, glm::vec3& Position,int& ITERATIONS, int& SHADOW_RAYS)
+ : scene(scene), network_data(network_data), shaders(shaders), Position(Position), ITERATIONS(ITERATIONS), SHADOW_RAYS(SHADOW_RAYS)
+{
+    // this is temporary to allow for traditional objects and normal objects to exist in a single combo.
+    // it is planned for them to replace those objects though.
+    for (int i = 0; i < sizeof(ObjAsStr)/sizeof(ObjAsStr[0]); i++)
+    {
+        object_names.push_back(ObjAsStr[i]);
+    }
+    for (int i = 0; i < scene.custom_objects.objects.size(); i++)
+    {
+        object_names.push_back(scene.custom_objects.objects[i].name);
+    }
+}
 
 void ImguiRenderer::imgui_start_frame()
 {
@@ -163,7 +175,23 @@ void ImguiRenderer::imgui_render_scene_editor()
     Header_flags |= ImGuiTreeNodeFlags_AllowItemOverlap;
     if (ImGui::TreeNodeEx("Objects", Header_flags)) {
 
-        ImGui::Combo("Object type", &selected_obj_type, ObjAsStr,IM_ARRAYSIZE(ObjAsStr));
+        //ImGui::Combo("Object type", &selected_obj_type, ObjAsStr,IM_ARRAYSIZE(ObjAsStr));
+        if (ImGui::BeginCombo("Object type", object_names[selected_obj_type].c_str()))
+        {
+            for (int i = 0; i < object_names.size(); ++i)
+            {
+                const bool is_selected = (selected_obj_type == i);
+                if (ImGui::Selectable(object_names[i].c_str(), is_selected))
+                {
+                    selected_obj_type = i;
+                }
+                if (is_selected)
+                {
+                    ImGui::SetItemDefaultFocus();
+                }
+            }
+            ImGui::EndCombo();
+        }
         ImGui::InputText("Object name", &new_object_name);
         if(ImGui::Button("Add object")) {
             if(std::find(scene.labels.begin(), scene.labels.end(), new_object_name)==scene.labels.end()) {
@@ -248,15 +276,16 @@ void ImguiRenderer::imgui_render_scene_editor()
                 ImGui::OpenPopup("Error");
              
             
-        }
-        if (ImGui::BeginPopup("Error")) {
-                ImGui::Text("Error: name already exists");
-                if(ImGui::Button("OK")) {
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::EndPopup();
             }
         }
+        if (ImGui::BeginPopup("Error")) {
+            ImGui::Text("Error: name already exists");
+            if(ImGui::Button("OK")) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+        
 
         for (int i = 0; i < scene.materials.size(); i++)
         {
@@ -276,10 +305,83 @@ void ImguiRenderer::imgui_render_scene_editor()
         }
         ImGui::TreePop();
     }
-    
-    
+    if (ImGui::TreeNodeEx("Custom objects types", Header_flags))
+    {
+        ImGui::InputText("Object name", &new_object_type_name);
+        if(ImGui::Button("Add custom object type")) {
+            bool name_exists = false;
+            for (auto object_type : scene.custom_objects.objects)
+            {
+                name_exists |= (new_object_type_name == object_type.name);
+            }
+            if (!name_exists) {
+                //temp
+                object_names.push_back(new_object_type_name);
+                //temp
+                scene.custom_objects.objects.push_back(
+                    CustomObject{(int)scene.custom_objects.objects.size() + T__LENGTH, new_object_type_name, "float " + new_object_type_name + "(vec3 pos, vec3 ray, vec4 args)\n{\n    return 100.0f;\n}\n"}
+                );
+
+            } else {
+                ImGui::OpenPopup("Error");
+             
+            
+            }
+        }
+        if (ImGui::BeginPopup("Error")) {
+            ImGui::Text("Error: name already exists");
+            if(ImGui::Button("OK")) {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+        
+        for (int i = 0; i < scene.custom_objects.objects.size(); i++)
+        {
+            ImGuiTreeNodeFlags tree_flags = ImGuiTreeNodeFlags_AllowItemOverlap;
+            if(custom_object_selected == i) tree_flags |= ImGuiTreeNodeFlags_Selected;
+            bool is_open = ImGui::TreeNodeEx(scene.custom_objects.objects[i].name.c_str(), tree_flags);
+
+            if (ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGui::IsItemToggledOpen()) {
+                custom_object_selected = i;
+            }
+            if (is_open)
+            {
+                if (ImGui::Button("Edit implementation"))
+                {
+                    //edit implmentation
+                    custom_object_currently_edited = i;
+                    text_editor.SetText(scene.custom_objects.objects[i].implementation);
+                    text_editor.SetLanguageDefinition(TextEditor::LanguageDefinition::C());
+                    text_editor.SetCursorPosition({0, 0});
+                    editor_opened = true;
+                }
+                ImGui::TreePop();
+            }
+        }
+        ImGui::TreePop();
+    }
 
     ImGui::End();
     
 }
 
+void ImguiRenderer::RenderTextEditor()
+{
+    if (editor_opened)
+    {
+        ImGui::Begin("Text editor", &editor_opened, ImGuiWindowFlags_HorizontalScrollbar);
+        if (ImGui::Button("Compile"))
+        {
+            //assemble and compile shader
+            scene.custom_objects.objects[custom_object_currently_edited].implementation = text_editor.GetText();
+            std::string new_fragment_code = scene.custom_objects.generateFragmentShader(shaders->fragmentCode);
+            printf("%s\n", new_fragment_code.c_str());
+            // shaders->Delete();
+            // *shaders = Shader("./resources/main.vert", "./resources/main.frag");
+            shaders->RecompileShader(new_fragment_code);
+        }
+        text_editor.Render("Text editor");
+        ImGui::End();
+    }
+}

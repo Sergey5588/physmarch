@@ -2,7 +2,7 @@
 
 // let's reasses this file for a bit
 // we want a single function to send http request on both browser and desktop versions
-// 
+// and Done
 
 void downloadSucceeded(http_response *fetch) {
   printf("Finished downloading %llu bytes from URL %s.\n", fetch->numBytes, fetch->url);

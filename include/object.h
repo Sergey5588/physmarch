@@ -3,6 +3,11 @@
 
 #ifndef OBJECT_H
 #define OBJECT_H
+#include <string>
+#include <vector>
+
+// also need to be changed in the shader
+#define max_object_type_count 128 
 
 enum ObjectType {
 	T_SPHERE,
@@ -14,6 +19,21 @@ enum ObjectType {
 	T__LENGTH
 };
 
+struct CustomObject
+{
+	int id;
+	std::string name;
+	std::string implementation;
+};
+
+class CustomObjects
+{
+public:
+	std::string generateFragmentShader(std::string shader_template);
+
+	//Object id must be in increasing order
+	std::vector<CustomObject> objects;
+};
 
 
 enum OperationType {

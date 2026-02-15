@@ -1,7 +1,7 @@
 #include"scene.h"
 
 void Scene::update_ln() {
-	for(int i = 0; i < T__LENGTH; ++i) {
+	for(int i = 0; i < max_object_type_count; ++i) {
 		lengths[i] = 0;
 	}
 
